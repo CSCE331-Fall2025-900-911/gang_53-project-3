@@ -1,6 +1,6 @@
-// Example utility for making API calls to the backend
+// API utility for making calls to Next.js API routes
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export async function fetchAPI<T>(
   endpoint: string,
@@ -28,13 +28,34 @@ export async function fetchAPI<T>(
   }
 }
 
+// API response types
+export interface HealthResponse {
+  status: string;
+  uptime: number;
+  timestamp: string;
+}
+
+export interface ExampleResponse {
+  message: string;
+  data: any;
+}
+
+export interface RootResponse {
+  message: string;
+  status: string;
+  timestamp: string;
+}
+
 // Example API functions
 export const api = {
+  // Root endpoint
+  root: () => fetchAPI<RootResponse>(''),
+  
   // Health check
-  health: () => fetchAPI<{ status: string; uptime: number; timestamp: string }>('/api/health'),
+  health: () => fetchAPI<HealthResponse>('/health'),
   
   // Example endpoint
-  getExample: () => fetchAPI<{ message: string; data: any }>('/api/example'),
+  getExample: () => fetchAPI<ExampleResponse>('/example'),
   
   // Add more API functions as needed
 };
