@@ -59,3 +59,15 @@ export const api = {
   
   // Add more API functions as needed
 };
+
+export async function fetchUsers() {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
+    cache: 'no-store', // ensures always fresh data
+  });
+  
+  if (!res.ok) {
+    throw new Error(`Failed to fetch users: ${res.statusText}`);
+  }
+
+  return res.json();
+}
