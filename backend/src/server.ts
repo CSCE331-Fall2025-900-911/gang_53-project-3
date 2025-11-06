@@ -25,8 +25,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 const allowedOrigins = [
-  process.env.FRONTEND_URL, // your frontend
-  'https://bobaliciousgang53.vercel.app', // hardcode URL
+  'https://bobaliciousgang53.vercel.app',   // hardcode URL
   'http://localhost:3000', // local dev
 ];
 
