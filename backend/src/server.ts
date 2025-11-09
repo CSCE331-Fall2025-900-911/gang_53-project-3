@@ -2,6 +2,9 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import expressSession from 'express-session';
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +50,119 @@ app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
+
+// Middleware
+app.use(
+  expressSession({
+    secret: "a3f5d6e7c8b9a0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+// Passport Middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Google OAuth Config
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL!,
+    },
+    (
+      accessToken: string,
+      refreshToken: string,
+      profile: passport.Profile,
+      done: (error: any, user?: any) => void
+    ) => {
+      return done(null, profile);
+    }
+  )
+);
+
+passport.serializeUser((user: any, done: (error: any, id?: any) => void) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user: any, done: (error: any, user?: any) => void) => {
+  done(null, user as Express.User);
+});
+
+
+// Check authentication status
+app.get('/auth/status', (req, res) => {
+  if (req.isAuthenticated()) {
+    res.json({ authenticated: true, user: req.user });
+  } else {
+    res.json({ authenticated: false });
+  }
+});
+
+// Google OAuth Routes
+app.get(
+  '/auth/google',
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    prompt: 'select_account'
+  })
+)
+
+// Force login route (logs out first, then redirects to login)
+app.get('/auth/google/force', (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Error logging out');
+    }
+    req.session.destroy((destroyErr) => {
+      if (destroyErr) {
+        console.error('Error destroying session:', destroyErr);
+        return res.status(500).send('Error destroying session');
+      }
+      res.clearCookie('connect.sid');
+      // Redirect to Google auth with forced login
+      res.redirect('/auth/google');
+    });
+  });
+});
+
+app.get(
+  '/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req, res) => {
+    res.redirect(process.env.FRONTEND_URL + '/dashboard'); // Redirect after successful login
+  }
+);
+
+
+app.get('/auth/logout', (req, res) => {
+  console.log('Logout endpoint hit');
+  console.log('User authenticated before logout:', req.isAuthenticated());
+  
+  req.logout((err) => {
+    if (err) {
+      console.error('Error during logout:', err);
+      return res.status(500).send('Error logging out');
+    }
+    
+    req.session.destroy((destroyErr) => {
+      if (destroyErr) {
+        console.error('Error destroying session:', destroyErr);
+        return res.status(500).send('Error destroying session');
+      }
+      
+      res.clearCookie('connect.sid');
+      console.log('Session destroyed and cookie cleared');
+      res.json({ message: 'Logged out successfully', authenticated: false });
+    });
+  });
+});
+
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
