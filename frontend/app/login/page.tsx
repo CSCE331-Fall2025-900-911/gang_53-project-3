@@ -15,8 +15,12 @@ export default function Login() {
     setLoading(true);
     setError('');
 
+    const backendURL = process.env.NODE_ENV === 'production' 
+      ? 'https://gang53-project-3-backend.vercel.app'
+      : 'http://localhost:5000';
+
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
+      const response = await fetch(`${backendURL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +85,9 @@ export default function Login() {
         <div className="mt-4">
           <p className="text-gray-600 dark:text-gray-300">Or login with:</p>
           <a
-            href="http://localhost:5000/auth/google"
+            href={process.env.NODE_ENV === 'production' 
+              ? 'https://gang53-project-3-backend.vercel.app/auth/google'
+              : 'http://localhost:5000/auth/google'}
             className="mt-2 inline-block px-6 py-2 text-white bg-red-500 rounded hover:bg-red-600"
           >
             Google Login

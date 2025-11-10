@@ -21,7 +21,11 @@ export default function Dashboard() {
   const [weather, setWeather] = useState<Weather | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/auth/status', { credentials: 'include' })
+    const backendURL = process.env.NODE_ENV === 'production' 
+      ? 'https://gang53-project-3-backend.vercel.app'
+      : 'http://localhost:5000';
+
+    fetch(`${backendURL}/auth/status`, { credentials: 'include' })
       .then((res) => res.json())
       .then((data) => {
         if (data.authenticated && data.user) {
@@ -142,7 +146,9 @@ export default function Dashboard() {
         )}
 
         <a
-          href="http://localhost:5000/auth/logout"
+          href={process.env.NODE_ENV === 'production' 
+            ? 'https://gang53-project-3-backend.vercel.app/auth/logout'
+            : 'http://localhost:5000/auth/logout'}
           className="mt-24 px-6 py-2 text-white bg-red-500 rounded hover:bg-red-600"
         >
           Logout
