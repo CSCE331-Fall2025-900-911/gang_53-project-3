@@ -9,9 +9,16 @@ interface User {
   username?: string;
 }
 
+interface Weather {
+  temperature: number;
+  description: string;
+  city: string;
+}
+
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [weather, setWeather] = useState<Weather | null>(null);
 
   useEffect(() => {
     fetch('http://localhost:5000/auth/status', { credentials: 'include' })
@@ -51,18 +58,28 @@ export default function Dashboard() {
         setLoading(false);
       });
 
-    // Initialize Google Translate Widget
-    const googleTranslateScript = document.createElement('script');
-    googleTranslateScript.type = 'text/javascript';
-    googleTranslateScript.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-    document.body.appendChild(googleTranslateScript);
+    // Fetch weather data
+    const fetchWeather = async () => {
+      const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
+      const city = 'College Station'; 
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
 
-    window.googleTranslateElementInit = () => {
-      new window.google.translate.TranslateElement(
-        { pageLanguage: 'en' },
-        'google_translate_element'
-      );
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data && data.main && data.weather) {
+          setWeather({
+            temperature: data.main.temp,
+            description: data.weather[0].description,
+            city: data.name,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching weather data:', error);
+      }
     };
+
+    fetchWeather();
   }, []);
 
   if (loading) {
@@ -94,7 +111,7 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <div className="text-center">
-        {/* google translate widget */}
+        {/* Google Translate Widget */}
         <div id="google_translate_element" className="mb-4"></div>
 
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -108,9 +125,25 @@ export default function Dashboard() {
             Username: {user.username}
           </p>
         )}
+
+        {/* Weather Information */}
+        {weather && (
+          <div className="mt-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Weather in {weather.city}
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Temperature: {weather.temperature}°C
+            </p>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Description: {weather.description}
+            </p>
+          </div>
+        )}
+
         <a
           href="http://localhost:5000/auth/logout"
-          className="px-6 py-2 text-white bg-red-500 rounded hover:bg-red-600"
+          className="mt-24 px-6 py-2 text-white bg-red-500 rounded hover:bg-red-600"
         >
           Logout
         </a>
