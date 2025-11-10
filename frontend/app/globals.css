@@ -24,3 +24,38 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+#google_translate_element {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Style the dropdown */
+.goog-te-gadget {
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  color: #333;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 5px 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Remove the "Powered by Google" text */
+.goog-te-gadget span {
+  display: none;
+}
+
+/* Style the dropdown arrow */
+.goog-te-gadget-icon {
+  display: none; 
+}
+
+/* Center the dropdown */
+.goog-te-gadget-simple {
+  display: inline-block;
+  text-align: center;
+}
