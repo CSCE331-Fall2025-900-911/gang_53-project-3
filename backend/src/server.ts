@@ -3,8 +3,20 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import expressSession from 'express-session';
+import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
+import session from 'express-session';
+
+// Type declarations
+declare module 'express-session' {
+  interface SessionData {
+    user?: {
+      id: number;
+      username?: string; // optional
+      email: string;
+      name: string;
+    };
+  }
+}
 
 // Load environment variables
 dotenv.config();
@@ -45,7 +57,7 @@ app.use(cors({
   credentials: true,
 }));
 
-// ✅ handle preflight requests
+// Handle preflight requests
 app.options('*', cors());
 
 app.use(express.json());
@@ -55,10 +67,16 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware
 app.use(
-  expressSession({
+  session({
     secret: "a3f5d6e7c8b9a0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, 
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'lax' 
+    }
   })
 );
 
@@ -96,8 +114,10 @@ passport.deserializeUser((user: any, done: (error: any, user?: any) => void) => 
 
 // Check authentication status
 app.get('/auth/status', (req, res) => {
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated() && req.user) {
     res.json({ authenticated: true, user: req.user });
+  } else if ((req.session as any).user) {
+    res.json({ authenticated: true, user: (req.session as any).user });
   } else {
     res.json({ authenticated: false });
   }
@@ -112,56 +132,62 @@ app.get(
   })
 )
 
-// Force login route (logs out first, then redirects to login)
-app.get('/auth/google/force', (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send('Error logging out');
-    }
-    req.session.destroy((destroyErr) => {
-      if (destroyErr) {
-        console.error('Error destroying session:', destroyErr);
-        return res.status(500).send('Error destroying session');
-      }
-      res.clearCookie('connect.sid');
-      // Redirect to Google auth with forced login
-      res.redirect('/auth/google');
-    });
-  });
-});
-
 app.get(
   '/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => {
-    res.redirect(process.env.FRONTEND_URL + '/dashboard'); // Redirect after successful login
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  async (req, res) => {
+    try {
+      const googleProfile = req.user as Profile;
+
+      if (!googleProfile || !googleProfile.emails || !googleProfile.displayName) {
+        return res.status(400).send('Invalid Google profile data');
+      }
+
+      // Check if the customer exists in the database
+      const result = await pool.query(
+        'SELECT * FROM customers WHERE email = $1',
+        [googleProfile.emails[0].value]
+      );
+
+      if (result.rowCount === 0) {
+        // If the customer doesn't exist, create a new customer
+        const newCustomer = await pool.query(
+          'INSERT INTO customers (name, email) VALUES ($1, $2) RETURNING *',
+          [googleProfile.displayName, googleProfile.emails[0].value]
+        );
+        (req.session as any).user = newCustomer.rows[0];
+      } else {
+        // If the customer exists, store their info in the session
+        (req.session as any).user = result.rows[0];
+      }
+
+      // Redirect to the dashboard
+      res.redirect(process.env.FRONTEND_URL + '/dashboard');
+    } catch (error) {
+      console.error('Error during Google login:', error);
+      res.status(500).send('Failed to login with Google');
+    }
   }
 );
 
 
 app.get('/auth/logout', (req, res) => {
-  console.log('Logout endpoint hit');
-  console.log('User authenticated before logout:', req.isAuthenticated());
-  
   req.logout((err) => {
     if (err) {
-      console.error('Error during logout:', err);
       return res.status(500).send('Error logging out');
     }
     
     req.session.destroy((destroyErr) => {
       if (destroyErr) {
-        console.error('Error destroying session:', destroyErr);
         return res.status(500).send('Error destroying session');
       }
       
       res.clearCookie('connect.sid');
-      console.log('Session destroyed and cookie cleared');
       res.json({ message: 'Logged out successfully', authenticated: false });
     });
   });
 });
+
 
 
 // Routes
@@ -417,6 +443,40 @@ app.post('/api/employees', async (req: Request, res: Response) => {
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to add employee' });
+  }
+});
+
+
+
+// ===== LOGIN ROUTE =====
+app.post('/api/login', async (req: Request, res: Response) => {
+  const { username, password } = req.body;
+  console.log('🔑 Login attempt for username:', username);
+
+  try {
+    // Query the database for the customer
+    const result = await pool.query(
+      'SELECT * FROM customers WHERE username = $1 AND password = $2',
+      [username, password]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    const user = result.rows[0];
+
+    // Create a session for the customer
+    (req.session as any).user = user;
+    
+    res.json({ 
+      success: true, 
+      message: 'Login successful', 
+      user: user 
+    });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ success: false, error: 'Failed to login' });
   }
 });
 
