@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Login() {
@@ -8,16 +8,20 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [backendURL, setBackendURL] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    const url = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:5000'
+      : (process.env.NEXT_PUBLIC_API_URL || 'https://gang53-project-3-backend.vercel.app');
+    setBackendURL(url);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    const backendURL = process.env.NODE_ENV === 'production' 
-      ? 'https://gang53-project-3-backend.vercel.app'
-      : 'http://localhost:5000';
 
     try {
       const response = await fetch(`${backendURL}/api/login`, {
@@ -84,14 +88,14 @@ export default function Login() {
         </form>
         <div className="mt-4">
           <p className="text-gray-600 dark:text-gray-300">Or login with:</p>
-          <a
-            href={process.env.NODE_ENV === 'production' 
-              ? 'https://gang53-project-3-backend.vercel.app/auth/google'
-              : 'http://localhost:5000/auth/google'}
-            className="mt-2 inline-block px-6 py-2 text-white bg-red-500 rounded hover:bg-red-600"
-          >
-            Google Login
-          </a>
+          {backendURL && (
+            <a
+              href={`${backendURL}/auth/google`}
+              className="mt-2 inline-block px-6 py-2 text-white bg-red-500 rounded hover:bg-red-600"
+            >
+              Google Login
+            </a>
+          )}
         </div>
       </div>
     </div>

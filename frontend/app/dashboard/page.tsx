@@ -19,12 +19,36 @@ export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [weather, setWeather] = useState<Weather | null>(null);
+  const [backendURL, setBackendURL] = useState('');
 
   useEffect(() => {
-    const backendURL = process.env.NODE_ENV === 'production' 
-      ? 'https://gang53-project-3-backend.vercel.app'
-      : 'http://localhost:5000';
+    const url = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:5000'
+      : (process.env.NEXT_PUBLIC_API_URL || 'https://gang53-project-3-backend.vercel.app');
+    setBackendURL(url);
+  }, []);
 
+  // Load Google Translate widget
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).googleTranslateElementInit = function() {
+        new (window as any).google.translate.TranslateElement(
+          { pageLanguage: 'en' },
+          'google_translate_element'
+        );
+      };
+
+      // Load the translate script
+      const script = document.createElement('script');
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!backendURL) return;
+    
     fetch(`${backendURL}/auth/status`, { credentials: 'include' })
       .then((res) => res.json())
       .then((data) => {
@@ -84,7 +108,7 @@ export default function Dashboard() {
     };
 
     fetchWeather();
-  }, []);
+  }, [backendURL]);
 
   if (loading) {
     return (
@@ -146,9 +170,7 @@ export default function Dashboard() {
         )}
 
         <a
-          href={process.env.NODE_ENV === 'production' 
-            ? 'https://gang53-project-3-backend.vercel.app/auth/logout'
-            : 'http://localhost:5000/auth/logout'}
+          href={`${backendURL}/auth/logout`}
           className="mt-24 px-6 py-2 text-white bg-red-500 rounded hover:bg-red-600"
         >
           Logout
