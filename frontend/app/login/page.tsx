@@ -1,22 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [backendURL, setBackendURL] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
   const lang = searchParams.get('lang') ?? 'en';
 
-  const backendURL =
-    process.env.NODE_ENV === 'production'
-      ? 'https://gang53-project-3-backend.vercel.app'
-      : 'http://localhost:5000';
+  useEffect(() => {
+    const url = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:5000'
+      : (process.env.NEXT_PUBLIC_API_URL || 'https://gang53-project-3-backend.vercel.app');
+    setBackendURL(url);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

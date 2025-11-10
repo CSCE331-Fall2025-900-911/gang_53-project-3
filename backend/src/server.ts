@@ -84,13 +84,28 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Determine URLs based on environment
+const getCallbackURL = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://gang53-project-3-backend.vercel.app/auth/google/callback';
+  }
+  return 'http://localhost:5000/auth/google/callback';
+};
+
+const getFrontendURL = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://bobaliciousgang53.vercel.app';
+  }
+  return 'http://localhost:3000';
+};
+
 // Google OAuth Config
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL!,
+      callbackURL: getCallbackURL(),
     },
     (
       accessToken: string,
@@ -162,7 +177,7 @@ app.get(
       }
 
       // Redirect to the dashboard
-      res.redirect(process.env.FRONTEND_URL + '/dashboard');
+      res.redirect(getFrontendURL() + '/dashboard');
     } catch (error) {
       console.error('Error during Google login:', error);
       res.status(500).send('Failed to login with Google');
