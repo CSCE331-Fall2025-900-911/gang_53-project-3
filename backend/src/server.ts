@@ -84,13 +84,28 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Determine URLs based on environment
+const getCallbackURL = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://gang53-project-3-backend.vercel.app/auth/google/callback';
+  }
+  return 'http://localhost:5000/auth/google/callback';
+};
+
+const getFrontendURL = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://bobaliciousgang53.vercel.app';
+  }
+  return 'http://localhost:3000';
+};
+
 // Google OAuth Config
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL!,
+      callbackURL: getCallbackURL(),
     },
     (
       accessToken: string,
@@ -162,7 +177,7 @@ app.get(
       }
 
       // Redirect to the dashboard
-      res.redirect(process.env.FRONTEND_URL + '/dashboard');
+      res.redirect(getFrontendURL() + '/dashboard');
     } catch (error) {
       console.error('Error during Google login:', error);
       res.status(500).send('Failed to login with Google');
@@ -305,6 +320,35 @@ app.delete('/api/inventory/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error deleting inventory item:', error);
     res.status(500).json({ success: false, error: 'Failed to delete item' });
+  }
+});
+
+// ===== USAGE ROUTES =====
+app.get('/api/usage', async (req: Request, res: Response) => {
+  try {
+    const { start, end } = req.query;
+    if (!start || !end) {
+      return res.status(400).json({ success: false, error: 'Missing start or end date parameters' });
+    }
+    const result = await pool.query(
+      `
+      SELECT 
+        i.name AS product_name,
+        DATE(o.order_date) AS order_day,
+        SUM(oi.quantity) AS total_quantity
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.order_id
+      JOIN inventory i ON oi.inventory_id = i.inventory_id
+      WHERE o.order_date BETWEEN $1 AND $2
+      GROUP BY i.name, order_day
+      ORDER BY order_day ASC
+      `,
+      [start, end]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching usage data:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch usage data' });
   }
 });
 
