@@ -1,12 +1,13 @@
 {
   "name": "backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Express backend for gang_53-project-3",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node server.js",
     "lint": "eslint src/**/*.ts"
   },
   "keywords": [],
