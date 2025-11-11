@@ -17,7 +17,6 @@ interface Weather {
   city: string;
 }
 
-// ----- Old-design style static items (you can swap to DB later) -----
 type Opt = { id: string; name: string; priceDelta?: number };
 type Group = { id: string; name: string; type: 'single' | 'multiple'; options: Opt[] };
 type Item = {
