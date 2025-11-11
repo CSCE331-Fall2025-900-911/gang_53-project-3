@@ -1,8 +1,21 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/lib/cart';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  username?: string;
+}
+
+interface Weather {
+  temperature: number;
+  description: string;
+  city: string;
+}
 
 // ----- Old-design style static items (you can swap to DB later) -----
 type Opt = { id: string; name: string; priceDelta?: number };
@@ -114,9 +127,141 @@ const lineId = (itemId: string, selections: Record<string, string[]>, sizeId?: s
 export default function OldDesignMenuPage() {
   const { add, subtotal } = useCart();
   const [active, setActive] = useState<Item | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [weather, setWeather] = useState<Weather | null>(null);
+  const [backendURL, setBackendURL] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Initialize translate widget
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).googleTranslateElementInit = function() {
+        new (window as any).google.translate.TranslateElement(
+          { pageLanguage: 'en' },
+          'google_translate_element'
+        );
+      };
+
+      const script = document.createElement('script');
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Set backend URL based on environment
+  useEffect(() => {
+    const url = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:5000'
+      : (process.env.NEXT_PUBLIC_API_URL || 'https://gang53-project-3-backend.vercel.app');
+    setBackendURL(url);
+  }, []);
+
+  // Fetch user and weather data
+  useEffect(() => {
+    if (!backendURL) return;
+    
+    // Fetch user auth status
+    fetch(`${backendURL}/auth/status`, { credentials: 'include' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          const userData = data.user;
+          let displayName = 'Unknown User';
+          if (typeof userData.name === 'string') {
+            displayName = userData.name;
+          } else if (userData.displayName) {
+            displayName = userData.displayName;
+          } else if (userData.name && typeof userData.name === 'object') {
+            const nameObj = userData.name as any;
+            if (nameObj.givenName && nameObj.familyName) {
+              displayName = `${nameObj.givenName} ${nameObj.familyName}`;
+            } else if (nameObj.givenName) {
+              displayName = nameObj.givenName;
+            } else if (nameObj.familyName) {
+              displayName = nameObj.familyName;
+            }
+          } else if (userData._json?.name) {
+            displayName = userData._json.name;
+          }
+
+          setUser({
+            id: userData.id || userData._json?.sub || 0,
+            name: displayName,
+            email: userData.email || userData._json?.email || userData.emails?.[0]?.value || 'No email',
+            username: userData.username
+          });
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+
+    // Fetch weather data
+    const fetchWeather = async () => {
+      const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
+      const city = 'College Station'; 
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data && data.main && data.weather) {
+          setWeather({
+            temperature: data.main.temp,
+            description: data.weather[0].description,
+            city: data.name,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching weather data:', error);
+      }
+    };
+
+    fetchWeather();
+  }, [backendURL]);
 
   return (
     <main className="min-h-dvh bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-zinc-100">
+      {/* Top header with user info, weather, and translate */}
+      <div className="border-b border-zinc-800 bg-zinc-900/70 px-6 py-4">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            {/* Left: User greeting and weather */}
+            <div className="space-y-2">
+              {user && (
+                <div>
+                  <h2 className="text-2xl font-bold">Welcome, {user.name}!</h2>
+                  <p className="text-sm text-zinc-400">{user.email}</p>
+                </div>
+              )}
+              {weather && (
+                <div className="text-sm text-zinc-300">
+                  🌤️ {weather.city}: {weather.temperature}°C, {weather.description}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Translate and logout */}
+            <div className="flex flex-col items-start gap-3 md:items-end">
+              <div id="google_translate_element"></div>
+              {backendURL && user && (
+                <button
+                  onClick={() => {
+                    window.location.href = `${backendURL}/auth/logout`;
+                  }}
+                  className="rounded-lg border border-red-700 bg-red-900/40 px-4 py-2 text-sm font-medium hover:bg-red-900/60"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main menu content */}
       <div className="mx-auto w-full max-w-6xl px-6 py-10 md:py-16">
         {/* Title */}
         <header className="mb-8 text-center">
@@ -178,7 +323,6 @@ export default function OldDesignMenuPage() {
   );
 }
 
-// ---------- Minimal customize modal (old design feel) ----------
 function CustomizeModal({
   item,
   onClose,
