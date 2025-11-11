@@ -12,19 +12,49 @@ export default function ManagerPage() {
   const [xReport, setXReport] = useState<XRow[]>([]);
   const [zReport, setZReport] = useState<ZReport | null>(null);
 
+  // Use production API URL or fall back to localhost
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:5000";
+
   const fetchEmployees = async () => {
-    const res = await fetch("http://localhost:8080/api/employees");
-    setEmployees(await res.json());
+    try {
+      const res = await fetch(`${apiUrl}/api/employees`);
+      if (!res.ok) throw new Error("Failed to fetch employees");
+      const data = await res.json();
+      // Handle wrapped response format
+      const employees = Array.isArray(data) ? data : data?.data || [];
+      setEmployees(employees);
+    } catch (err) {
+      console.error("Error fetching employees:", err);
+      setEmployees([]);
+    }
   };
 
   const refreshXReport = async () => {
-    const res = await fetch("http://localhost:8080/api/reports/xreport");
-    setXReport(await res.json());
+    try {
+      const res = await fetch(`${apiUrl}/api/reports/xreport`);
+      if (!res.ok) throw new Error("Failed to fetch X report");
+      const data = await res.json();
+      // Handle wrapped response format
+      const report = Array.isArray(data) ? data : data?.data || [];
+      setXReport(report);
+    } catch (err) {
+      console.error("Error fetching X report:", err);
+      setXReport([]);
+    }
   };
 
   const getZReport = async () => {
-    const res = await fetch("http://localhost:8080/api/reports/zreport");
-    setZReport(await res.json());
+    try {
+      const res = await fetch(`${apiUrl}/api/reports/zreport`);
+      if (!res.ok) throw new Error("Failed to fetch Z report");
+      const data = await res.json();
+      // Handle wrapped response format
+      const report = Array.isArray(data) ? data : data?.data;
+      setZReport(report || null);
+    } catch (err) {
+      console.error("Error fetching Z report:", err);
+      setZReport(null);
+    }
   };
 
   useEffect(() => {

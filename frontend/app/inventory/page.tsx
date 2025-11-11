@@ -17,39 +17,100 @@ export default function InventoryPage() {
     const [chartData, setChartData] = useState<any[]>([]);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [chartError, setChartError] = useState<string | null>(null);
+
+    // Use production API URL or fall back to localhost
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:5000";
 
     // Fetch inventory from backend
     useEffect(() => {
         async function fetchInventory() {
             try {
-                const res = await fetch("http://localhost:8080/api/inventory");
+                setLoading(true);
+                console.log("Fetching inventory from:", `${apiUrl}/api/inventory`);
+                const res = await fetch(`${apiUrl}/api/inventory`);
+                
+                if (!res.ok) {
+                    const errorData = await res.text();
+                    throw new Error(`HTTP error! status: ${res.status}, body: ${errorData}`);
+                }
+                
                 const data = await res.json();
-                setItems(data);
+                console.log("Received inventory data:", data);
+                
+                // Handle response format: { success: true, data: [...] } or just [...]
+                let inventory = Array.isArray(data) ? data : data?.data;
+                
+                if (Array.isArray(inventory)) {
+                    setItems(inventory);
+                    setError(null);
+                } else {
+                    console.error("Data is not an array:", data);
+                    throw new Error(`API returned non-array data: ${JSON.stringify(data)}`);
+                }
             } catch (err) {
-                console.error("Error fetching inventory:", err);
+                const errorMessage = err instanceof Error ? err.message : String(err);
+                console.error("Error fetching inventory:", errorMessage);
+                setError(errorMessage);
+                setItems([]);
+            } finally {
+                setLoading(false);
             }
         }
         fetchInventory();
-    }, []);
+    }, [apiUrl]);
 
     const refreshChart = async () => {
-        if (!startDate || !endDate) return;
+        if (!startDate || !endDate) {
+            setChartError("Please select both start and end dates");
+            return;
+        }
 
         try {
+            setChartError(null);
+            console.log("Fetching usage data from:", `${apiUrl}/api/usage?start=${startDate}&end=${endDate}`);
             const res = await fetch(
-                `http://localhost:8080/api/usage?start=${startDate}&end=${endDate}`
+                `${apiUrl}/api/usage?start=${startDate}&end=${endDate}`
             );
+            
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            
             const data = await res.json();
+            console.log("Received usage data:", data);
+            
+            // Handle wrapped response format
+            let usageData = Array.isArray(data) ? data : data?.data || [];
+            
+            if (!Array.isArray(usageData)) {
+                console.error("Usage data is not an array:", usageData);
+                setChartData([]);
+                setChartError("Invalid data format received from server");
+                return;
+            }
+
+            if (usageData.length === 0) {
+                setChartData([]);
+                setChartError("No usage data found for the selected date range");
+                return;
+            }
 
             // Convert to recharts-friendly format
-            const formatted = data.map((row: any) => ({
+            const formatted = usageData.map((row: any) => ({
                 name: `${row.product_name} (${row.order_day})`,
                 usage: Number(row.total_quantity),
             }));
 
             setChartData(formatted);
+            setChartError(null);
         } catch (err) {
-            console.error("Error fetching usage chart data:", err);
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            console.error("Error fetching usage chart data:", errorMessage);
+            setChartData([]);
+            setChartError(errorMessage);
         }
     };
 
@@ -64,6 +125,14 @@ export default function InventoryPage() {
 
             <section className="inventory-section">
                 <h2>Inventory:</h2>
+                
+                {loading && <p style={{ color: '#888', marginBottom: '20px' }}>Loading inventory...</p>}
+                {error && <p style={{ color: '#ff6b6b', marginBottom: '20px' }}>Error: {error}</p>}
+                
+                {!loading && !error && items.length === 0 && (
+                    <p style={{ color: '#888', marginBottom: '20px' }}>No products available</p>
+                )}
+                
                 <div className="table-container">
                     <table>
                         <thead>
@@ -98,6 +167,8 @@ export default function InventoryPage() {
 
             <section className="chart-section">
                 <h2>Product Usage Chart</h2>
+
+                {chartError && <p style={{ color: '#ff6b6b', marginBottom: '20px' }}>Error: {chartError}</p>}
 
                 <div className="date-controls">
                     <label>
