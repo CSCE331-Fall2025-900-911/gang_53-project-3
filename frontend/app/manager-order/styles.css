@@ -1,0 +1,101 @@
+.manager-container {
+  padding: 30px;
+  text-align: center;
+  background-color: #f7f7f7;
+  min-height: 100vh;
+  color: black;
+}
+
+.title {
+  color: #1565c0;
+  margin-bottom: 20px;
+}
+
+.drink-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 25px;
+  justify-items: center;
+}
+
+.drink-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+  width: 160px;
+  text-align: center;
+  position: relative;
+}
+
+.drink-img {
+  width: 100px;
+  height: auto;
+}
+
+h3 {
+  color: darkred;
+  font-size: 0.95rem;
+  margin-top: 5px;
+}
+
+.badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: orange;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 3px 6px;
+  border-radius: 8px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.controls button {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  background: linear-gradient(#f5f5f5, #e0e0e0);
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.controls button:hover {
+  background: linear-gradient(#e0e0e0, #d0d0d0);
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.home-btn,
+.pay-btn {
+  padding: 10px 25px;
+  border-radius: 6px;
+  background: linear-gradient(#f5f5f5, #e0e0e0);
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.home-btn:hover,
+.pay-btn:hover {
+  background: linear-gradient(#e0e0e0, #d0d0d0);
+}
+
+.total {
+  font-size: 1.2rem;
+  font-weight: bold;
+}

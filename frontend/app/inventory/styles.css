@@ -1,0 +1,132 @@
+.inventory-page {
+    background-color: #f7f7f7;
+    min-height: 100vh;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    color: black;
+}
+
+.inventory-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1976d2;
+    color: white;
+    padding: 15px;
+    border-radius: 4px;
+    position: relative;
+}
+
+.inventory-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.back-btn {
+    position: absolute;
+    left: 20px;
+    background: linear-gradient(#f5f5f5, #e0e0e0);
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: black;
+}
+
+.inventory-section {
+    margin-top: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+th,
+td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+.button-row {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    background: linear-gradient(#f5f5f5, #e0e0e0);
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.action-btn:hover {
+    background: linear-gradient(#e0e0e0, #d0d0d0);
+}
+
+.chart-section {
+    margin-top: 30px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.chart-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fafafa;
+    white-space: nowrap;
+}
+
+.chart-inner {
+    min-width: 1000px;
+    padding-bottom: 10px;
+}
+
+
+.date-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.date-controls input[type="date"] {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.refresh-btn {
+    padding: 8px 14px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background: linear-gradient(#f5f5f5, #e0e0e0);
+    cursor: pointer;
+}
+
+.refresh-btn:hover {
+    background: linear-gradient(#e0e0e0, #d0d0d0);
+}
