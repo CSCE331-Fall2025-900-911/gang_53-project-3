@@ -22,7 +22,7 @@ export default function InventoryPage() {
     const [chartError, setChartError] = useState<string | null>(null);
 
     // Use production API URL or fall back to localhost
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:5000";
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:5000").replace(/\/$/, '');
 
     // Fetch inventory from backend
     useEffect(() => {
@@ -52,7 +52,8 @@ export default function InventoryPage() {
                 }
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : String(err);
-                console.error("Error fetching inventory:", errorMessage);
+                console.error("❌ Error fetching inventory:", errorMessage);
+                console.error("API URL was:", apiUrl);
                 setError(errorMessage);
                 setItems([]);
             } finally {
