@@ -1,0 +1,116 @@
+/* High Contrast Mode Styles */
+.high-contrast-mode {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+.high-contrast-mode .border-zinc-800 {
+  border-color: #fff !important;
+}
+
+.high-contrast-mode .border-b {
+  border-bottom-color: #fff !important;
+}
+
+.high-contrast-mode h1,
+.high-contrast-mode h2,
+.high-contrast-mode h3,
+.high-contrast-mode h4,
+.high-contrast-mode h5 {
+  color: #fff !important;
+}
+
+.high-contrast-mode .text-zinc-400,
+.high-contrast-mode .text-zinc-300,
+.high-contrast-mode .text-zinc-100 {
+  color: #fff !important;
+}
+
+.high-contrast-mode button {
+  border: 2px solid #fff !important;
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+.high-contrast-mode button:hover {
+  background-color: #333 !important;
+}
+
+.high-contrast-mode article {
+  border: 2px solid #fff !important;
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+.high-contrast-mode .bg-zinc-900,
+.high-contrast-mode .bg-zinc-900\/50,
+.high-contrast-mode .bg-zinc-900\/60,
+.high-contrast-mode .bg-zinc-900\/70 {
+  background-color: #000 !important;
+}
+
+.high-contrast-mode .bg-zinc-800\/50,
+.high-contrast-mode .bg-zinc-800 {
+  background-color: #1a1a1a !important;
+}
+
+.high-contrast-mode .bg-teal-800\/70,
+.high-contrast-mode .bg-teal-900\/40 {
+  background-color: #000 !important;
+  border-color: #fff !important;
+}
+
+.high-contrast-mode .border-teal-700,
+.high-contrast-mode .border-indigo-700,
+.high-contrast-mode .border-red-700 {
+  border-color: #fff !important;
+}
+
+.high-contrast-mode .bg-red-900\/40 {
+  background-color: #1a0000 !important;
+  border-color: #fff !important;
+}
+
+.high-contrast-mode .bg-indigo-800\/70 {
+  background-color: #000033 !important;
+  border-color: #fff !important;
+}
+
+.high-contrast-mode a {
+  color: #00ffff !important;
+}
+
+.high-contrast-mode a:hover {
+  color: #ffffff !important;
+}
+
+.high-contrast-mode .line-clamp-2 {
+  color: #fff !important;
+}
+
+.high-contrast-mode .rounded-xl {
+  border-color: #fff !important;
+}
+
+.high-contrast-mode .overflow-hidden {
+  background-color: #000 !important;
+}
+
+/* High contrast for form elements in modal */
+.high-contrast-mode .fixed {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+}
+
+.high-contrast-mode .grid {
+  background-color: #000 !important;
+}
+
+.high-contrast-mode .space-y-2 {
+  color: #fff !important;
+}
+
+.high-contrast-mode .font-semibold,
+.high-contrast-mode .font-medium,
+.high-contrast-mode .font-bold {
+  color: #fff !important;
+}
