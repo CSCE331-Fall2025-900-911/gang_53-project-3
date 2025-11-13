@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import passport from 'passport';
 import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
-import expressSession from 'express-session';
+const session = require('express-session');
 
 // Type declarations
 declare module 'express-session' {
@@ -67,7 +67,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware
 app.use(
-  expressSession({
+  session({
     secret: "a3f5d6e7c8b9a0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3",
     resave: false,
     saveUninitialized: false,
