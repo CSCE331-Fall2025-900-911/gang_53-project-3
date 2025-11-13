@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/lib/cart';
+import './styles.css';
 
 interface User {
   id: number;
@@ -130,6 +131,8 @@ export default function OldDesignMenuPage() {
   const [weather, setWeather] = useState<Weather | null>(null);
   const [backendURL, setBackendURL] = useState('');
   const [loading, setLoading] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [highContrast, setHighContrast] = useState(false);
 
   // Initialize translate widget
   useEffect(() => {
@@ -222,10 +225,40 @@ export default function OldDesignMenuPage() {
   }, [backendURL]);
 
   return (
-    <main className="min-h-dvh bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-zinc-100">
+    <main
+      className={`min-h-dvh bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-zinc-100 ${
+        highContrast ? 'high-contrast-mode' : ''
+      }`}
+      style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center top' }}
+    >
+      {/* Accessibility Controls */}
+      <div className="flex gap-2 flex-wrap p-4 bg-zinc-800/30 border-b border-zinc-700">
+        <button
+          onClick={() => setZoomLevel((prev) => Math.min(prev + 0.2, 2))}
+          className="rounded-lg border border-blue-600 bg-blue-800/50 px-3 py-2 text-sm font-medium hover:bg-blue-700/50 transition-colors"
+          title="Zoom in for better visibility"
+        >
+          🔍 Zoom In
+        </button>
+        <button
+          onClick={() => setZoomLevel(1)}
+          className="rounded-lg border border-blue-600 bg-blue-800/50 px-3 py-2 text-sm font-medium hover:bg-blue-700/50 transition-colors"
+          title="Reset zoom to normal size"
+        >
+          ↺ Reset Zoom
+        </button>
+        <button
+          onClick={() => setHighContrast((prev) => !prev)}
+          className="rounded-lg border border-blue-600 bg-blue-800/50 px-3 py-2 text-sm font-medium hover:bg-blue-700/50 transition-colors"
+          title="Toggle high contrast for better readability"
+        >
+          {highContrast ? '◐ Normal Colors' : '◑ High Contrast'}
+        </button>
+      </div>
+
       {/* Top header with user info, weather, and translate */}
       <div className="border-b border-zinc-800 bg-zinc-900/70 px-6 py-4">
-        <div className="mx-auto w-full max-w-6xl">
+     <div className="mx-auto w-full max-w-6xl">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Left: User greeting and weather */}
             <div className="space-y-2">

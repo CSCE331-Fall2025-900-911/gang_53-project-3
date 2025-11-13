@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import passport from 'passport';
 import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
-import session from 'express-session';
+const session = require('express-session');
 
 // Type declarations
 declare module 'express-session' {
