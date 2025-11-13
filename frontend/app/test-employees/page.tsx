@@ -9,7 +9,8 @@ export default function EmployeesPage() {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/employees`);
+        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+        const res = await fetch(`${apiUrl}/api/employees`);
         const data = await res.json();
         setEmployees(data.data || []);
       } catch (err) {

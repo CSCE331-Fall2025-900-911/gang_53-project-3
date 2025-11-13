@@ -44,24 +44,28 @@ const allowedOrigins = [
   'http://localhost:3000', // local dev
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
     console.log('📍 CORS request from origin:', origin);
-    // Allow requests with no origin (like mobile apps or curl)
     if (!origin || allowedOrigins.includes(origin)) {
       console.log('✅ CORS allowed');
-      return callback(null, true);
+      callback(null, true);
+    } else {
+      console.log('⚠️ CORS: Allowing origin for debugging:', origin);
+      callback(null, true);
     }
-    console.warn('🚫 CORS blocked for:', origin, 'Allowed:', allowedOrigins);
-    callback(null, true); // Allow all for now to debug
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+  preflightContinue: false,
+  optionsSuccessStatus: 200,
+};
 
-// Handle preflight requests
-app.options('*', cors());
+app.use(cors(corsOptions));
+
+// Explicit preflight handling
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

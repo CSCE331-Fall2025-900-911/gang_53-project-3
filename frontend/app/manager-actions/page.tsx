@@ -13,7 +13,7 @@ export default function ManagerPage() {
   const [zReport, setZReport] = useState<ZReport | null>(null);
 
   // Use production API URL or fall back to localhost
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:5000";
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:5000").replace(/\/$/, '');
 
   const fetchEmployees = async () => {
     try {

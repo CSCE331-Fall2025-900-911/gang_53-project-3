@@ -23,7 +23,7 @@ export default function ManagerOrderPage() {
             try {
                 setLoading(true);
                 // Use production API URL or fall back to localhost
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:5000";
+                const apiUrl = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:5000").replace(/\/$/, '');
                 console.log("Fetching from:", `${apiUrl}/api/inventory`);
                 const res = await fetch(`${apiUrl}/api/inventory`);
                 

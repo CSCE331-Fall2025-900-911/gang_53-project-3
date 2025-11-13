@@ -70,9 +70,10 @@ export default function InventoryPage() {
 
         try {
             setChartError(null);
-            console.log("Fetching usage data from:", `${apiUrl}/api/usage?start=${startDate}&end=${endDate}`);
-            const res = await fetch(
-                `${apiUrl}/api/usage?start=${startDate}&end=${endDate}`
+            const normalizedUrl = apiUrl.replace(/\/$/, '');
+            console.log("Fetching usage data from:", `${normalizedUrl}/api/usage?start=${startDate}&end=${endDate}`);
+            const response = await fetch(
+                `${normalizedUrl}/api/usage?start=${startDate}&end=${endDate}`
             );
             
             if (!res.ok) {

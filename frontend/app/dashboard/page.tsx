@@ -156,7 +156,7 @@ export default function OldDesignMenuPage() {
     const url = typeof window !== 'undefined' && window.location.hostname === 'localhost'
       ? 'http://localhost:5000'
       : (process.env.NEXT_PUBLIC_API_URL || 'https://gang53-project-3-backend.vercel.app');
-    setBackendURL(url);
+    setBackendURL(url.replace(/\/$/, ''));
   }, []);
 
   // Fetch user and weather data
