@@ -72,7 +72,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, 
+      secure: process.env.NODE_ENV === 'production', 
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax' 
@@ -141,15 +141,19 @@ app.get('/auth/status', (req, res) => {
 // Google OAuth Routes
 app.get(
   '/auth/google',
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'],
-    prompt: 'select_account'
-  })
-)
+  (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate('google', { 
+      scope: ['profile', 'email'],
+      prompt: 'select_account'
+    })(req, res, next);
+  }
+);
 
 app.get(
   '/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate('google', { failureRedirect: getFrontendURL() + '/login' })(req, res, next);
+  },
   async (req, res) => {
     try {
       const googleProfile = req.user as Profile;
