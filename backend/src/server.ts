@@ -162,23 +162,30 @@ app.get(
         return res.status(400).send('Invalid Google profile data');
       }
 
+      const email = googleProfile.emails[0].value;
+      const name = googleProfile.displayName;
+
       // Check if the customer exists in the database
       const result = await pool.query(
         'SELECT * FROM customers WHERE email = $1',
-        [googleProfile.emails[0].value]
+        [email]
       );
 
+      let user;
       if (result.rowCount === 0) {
         // If the customer doesn't exist, create a new customer
         const newCustomer = await pool.query(
-          'INSERT INTO customers (name, email) VALUES ($1, $2) RETURNING *',
-          [googleProfile.displayName, googleProfile.emails[0].value]
+          'INSERT INTO customers (name, email) VALUES ($1, $2) RETURNING id, name, email',
+          [name, email]
         );
-        (req.session as any).user = newCustomer.rows[0];
+        user = newCustomer.rows[0];
       } else {
-        // If the customer exists, store their info in the session
-        (req.session as any).user = result.rows[0];
+        // If the customer exists, get their info
+        user = result.rows[0];
       }
+
+      // Store user in session
+      (req.session as any).user = user;
 
       // Redirect to the dashboard
       res.redirect(getFrontendURL() + '/dashboard');
