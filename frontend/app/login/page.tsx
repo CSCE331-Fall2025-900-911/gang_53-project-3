@@ -149,7 +149,7 @@ function LoginContent() {
       <section className="mx-auto mt-10 max-w-3xl rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 text-center">
         <p className="mb-4 text-lg font-semibold">Skip login?</p>
         <Link
-          href="/menu"
+          href="/dashboard"
           className="inline-block w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-950 px-6 py-4 text-center font-semibold transition-all hover:bg-zinc-900"
         >
           Continue as Guest
