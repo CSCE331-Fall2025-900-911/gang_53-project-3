@@ -40,15 +40,17 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 const allowedOrigins = [
-  'https://bobaliciousgang53.vercel.app',   // hardcode URL
+  'https://bobaliciousgang53.vercel.app',   // production frontend
   'http://localhost:3000', // local dev
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
+    console.log('📍 CORS request from origin:', origin);
     // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
+      console.log('✅ CORS allowed for:', origin);
       return callback(null, true);
     }
     console.warn('🚫 Blocked by CORS:', origin);
@@ -270,11 +272,13 @@ app.get('/api/health', async (req: Request, res: Response) => {
 // ===== INVENTORY ROUTES =====
 app.get('/api/inventory', async (req: Request, res: Response) => {
   try {
+    console.log('📦 /api/inventory endpoint hit');
     const result = await pool.query('SELECT * FROM inventory ORDER BY inventory_id ASC');
+    console.log('✅ Inventory fetched:', result.rows.length, 'items');
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    console.error('Error fetching inventory:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch inventory' });
+    console.error('❌ Error fetching inventory:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch inventory', details: error instanceof Error ? error.message : String(error) });
   }
 });
 
