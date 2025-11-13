@@ -76,11 +76,11 @@ export default function InventoryPage() {
                 `${normalizedUrl}/api/usage?start=${startDate}&end=${endDate}`
             );
             
-            if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            const data = await res.json();
+            const data = await response.json();
             console.log("Received usage data:", data);
             
             // Handle wrapped response format
