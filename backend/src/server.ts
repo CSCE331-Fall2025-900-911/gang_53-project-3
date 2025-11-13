@@ -142,6 +142,9 @@ app.get('/auth/status', (req, res) => {
 app.get(
   '/auth/google',
   (req: Request, res: Response, next: NextFunction) => {
+    console.log('🔐 Google OAuth route hit');
+    console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'Set' : 'NOT SET');
+    console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'Set' : 'NOT SET');
     passport.authenticate('google', { 
       scope: ['profile', 'email'],
       prompt: 'select_account'
