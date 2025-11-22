@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-interface CartItem {
+export interface CartItem {
   id: string;
   itemId: string;
   name: string;
@@ -10,6 +10,7 @@ interface CartItem {
   unitPrice: number;
   totalPrice: number;
   selections: Record<string, string[]>;
+  imageUrl?: string;
 }
 
 interface CartContextType {

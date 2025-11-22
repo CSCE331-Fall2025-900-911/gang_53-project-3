@@ -36,8 +36,18 @@ export default function CartPage() {
                 className="flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 md:flex-row md:items-center md:justify-between"
               >
                 <div className="flex items-center gap-4">
-                  {/* thumbnail placeholder */}
-                  <div className="h-16 w-16 rounded-xl bg-zinc-800/70" />
+                  {/* thumbnail */}
+                  <div className="h-16 w-16 rounded-xl bg-zinc-800/70 overflow-hidden flex-shrink-0">
+                    {l.imageUrl ? (
+                      <img 
+                        src={l.imageUrl} 
+                        alt={l.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-zinc-800/70" />
+                    )}
+                  </div>
                   <div>
                     <h3 className="font-semibold">{l.name}</h3>
                     {l.selections && (

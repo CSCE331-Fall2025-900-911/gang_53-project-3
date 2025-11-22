@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useCart } from '@/lib/cart';
+import { useCart, type CartItem } from '@/lib/cart';
+import { ProductAIChat } from '@/components/ProductAIChat';
 import './styles.css';
 
 interface User {
@@ -27,95 +28,80 @@ type Item = {
   description?: string;
   imageUrl?: string;
   optionGroups: Group[];
+  isSpecial?: boolean;
 };
 
-const MENU: Item[] = [
-  {
-    id: 'oolong-milk-tea',
-    name: 'Oolong Milk Tea',
-    basePrice: 4.75,
-    description: 'Toasty oolong with milk.',
-    imageUrl: '',
-    optionGroups: [
-      {
-        id: 'size',
-        name: 'Size',
-        type: 'single',
-        options: [
-          { id: 's', name: 'Small' },
-          { id: 'm', name: 'Medium', priceDelta: 0.5 },
-          { id: 'l', name: 'Large', priceDelta: 1.0 },
-        ],
-      },
-      {
-        id: 'toppings',
-        name: 'Toppings',
-        type: 'multiple',
-        options: [
-          { id: 'boba', name: 'Boba', priceDelta: 0.5 },
-          { id: 'grass', name: 'Grass Jelly', priceDelta: 0.5 },
-          { id: 'pudding', name: 'Egg Pudding', priceDelta: 0.75 },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'thai-tea',
-    name: 'Thai Tea',
-    basePrice: 4.95,
-    description: 'Classic, creamy Thai tea.',
-    imageUrl: '',
-    optionGroups: [
-      {
-        id: 'size',
-        name: 'Size',
-        type: 'single',
-        options: [
-          { id: 's', name: 'Small' },
-          { id: 'm', name: 'Medium', priceDelta: 0.5 },
-          { id: 'l', name: 'Large', priceDelta: 1.0 },
-        ],
-      },
-      {
-        id: 'toppings',
-        name: 'Toppings',
-        type: 'multiple',
-        options: [
-          { id: 'boba', name: 'Boba', priceDelta: 0.5 },
-          { id: 'lychee', name: 'Lychee Jelly', priceDelta: 0.5 },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'strawberry-milk',
-    name: 'Strawberry Fresh Milk',
-    basePrice: 5.25,
-    description: 'Fresh milk with real strawberry.',
-    imageUrl: '',
-    optionGroups: [
-      {
-        id: 'size',
-        name: 'Size',
-        type: 'single',
-        options: [
-          { id: 's', name: 'Small' },
-          { id: 'm', name: 'Medium', priceDelta: 0.5 },
-          { id: 'l', name: 'Large', priceDelta: 1.0 },
-        ],
-      },
-      {
-        id: 'toppings',
-        name: 'Toppings',
-        type: 'multiple',
-        options: [
-          { id: 'boba', name: 'Boba', priceDelta: 0.5 },
-          { id: 'straw', name: 'Strawberry Popping', priceDelta: 0.6 },
-        ],
-      },
-    ],
-  },
-];
+// Database product type
+type DbProduct = {
+  inventory_id: number;
+  name: string;
+  price: number;
+  category: string;
+  seasonal?: string;
+  quantity_on_hand?: number;
+};
+
+// Default option groups for all products
+const DEFAULT_SIZE_OPTIONS: Group = {
+  id: 'size',
+  name: 'Size',
+  type: 'single',
+  options: [
+    { id: 's', name: 'Small' },
+    { id: 'm', name: 'Medium', priceDelta: 0.5 },
+    { id: 'l', name: 'Large', priceDelta: 1.0 },
+  ],
+};
+
+const DEFAULT_TOPPING_OPTIONS: Group = {
+  id: 'toppings',
+  name: 'Toppings',
+  type: 'multiple',
+  options: [
+    { id: 'boba', name: 'Boba', priceDelta: 0.5 },
+    { id: 'grass', name: 'Grass Jelly', priceDelta: 0.5 },
+    { id: 'pudding', name: 'Egg Pudding', priceDelta: 0.75 },
+    { id: 'lychee', name: 'Lychee Jelly', priceDelta: 0.5 },
+    { id: 'strawberry', name: 'Strawberry Popping', priceDelta: 0.6 },
+  ],
+};
+
+// Helper function to get image path for a product
+const getProductImage = (productName: string): string => {
+  const normalizedName = productName.toLowerCase().replace(/\s+/g, '_');
+  const imageMap: Record<string, string> = {
+    'classic_milk_tea': '/pics/classic_milk_tea.png',
+    'matcha_latte': '/pics/matcha_latte.png',
+    'taro_milk_tea': '/pics/taro_milk_tea.png',
+    'thai_tea': '/pics/thai_tea.png',
+    'brown_sugar_milk_tea': '/pics/brown_sugar_milk_tea.png',
+    'oolong_milk_tea': '/pics/oolong_milk_tea.png',
+    'coconut_milk_tea': '/pics/coconut_milk_tea.png',
+    'passionfruit_green_tea': '/pics/passionfruit_green_tea.png',
+    'lychee_green_tea': '/pics/lychee_green_tea.png',
+    'rose_milk_tea': '/pics/rose_milk_tea.png',
+    'coffee_milk_tea': '/pics/coffee_milk_tea.png',
+    'chocolate_milk_tea': '/pics/chocolate_milk_tea.png',
+    'mango_milk_tea': '/pics/mango_milk_tea.png',
+    'strawberry_milk_tea': '/pics/strawberry_milk_tea.png',
+    'honeydew_milk_tea': '/pics/honeydew_milk_tea.png',
+    'jasmine_green_milk_tea': '/pics/jasmine_green_milk_tea.png'
+
+  };
+  
+  return imageMap[normalizedName] || '';
+};
+
+// Helper function to convert DB product to menu item
+const convertToMenuItem = (product: DbProduct): Item => ({
+  id: `product-${product.inventory_id}`,
+  name: product.name,
+  basePrice: Number(product.price),
+  description: 'Delicious bubble tea drink',
+  imageUrl: getProductImage(product.name),
+  optionGroups: [DEFAULT_SIZE_OPTIONS, DEFAULT_TOPPING_OPTIONS],
+  isSpecial: product.seasonal?.toLowerCase() === 'y',
+});
 
 // ----- helper to compute a stable line id from selections -----
 const lineId = (itemId: string, selections: Record<string, string[]>, sizeId?: string) =>
@@ -133,6 +119,9 @@ export default function OldDesignMenuPage() {
   const [loading, setLoading] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [highContrast, setHighContrast] = useState(false);
+  const [menu, setMenu] = useState<Item[]>([]);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
 
   // Initialize translate widget
   useEffect(() => {
@@ -224,6 +213,47 @@ export default function OldDesignMenuPage() {
     fetchWeather();
   }, [backendURL]);
 
+  // Fetch menu products from database
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setMenuLoading(true);
+        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+        console.log('🍹 Fetching products from:', `${apiUrl}/api/inventory`);
+        
+        const response = await fetch(`${apiUrl}/api/inventory`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('📦 Received inventory data:', data);
+        
+        // Handle response format: { success: true, data: [...] } or just [...]
+        const inventory = Array.isArray(data) ? data : data?.data || [];
+        
+        // Filter for products only and convert to menu items
+        const products = inventory
+          .filter((item: DbProduct) => item.category === 'product')
+          .map((product: DbProduct) => convertToMenuItem(product));
+        
+        console.log('✅ Loaded', products.length, 'products');
+        setMenu(products);
+        setMenuError(null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('❌ Error fetching products:', errorMessage);
+        setMenuError(errorMessage);
+        setMenu([]);
+      } finally {
+        setMenuLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
   return (
     <main
       className={`min-h-dvh bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-zinc-100 ${
@@ -301,30 +331,81 @@ export default function OldDesignMenuPage() {
           <p className="mt-2 text-zinc-400">Pick a drink to customize</p>
         </header>
 
-        {/* Product row/grid (old design look) */}
-        <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {MENU.map((item) => (
-            <article
-              key={item.id}
-              className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/50"
-            >
-              <div className="h-40 w-full bg-zinc-800/50" />
-              <div className="space-y-2 p-5">
-                <h3 className="text-lg font-semibold">{item.name}</h3>
-                <p className="text-sm text-zinc-400 line-clamp-2">{item.description}</p>
-                <div className="flex items-center justify-between pt-2">
-                  <span className="font-semibold">${item.basePrice.toFixed(2)}</span>
-                  <button
-                    onClick={() => setActive(item)}
-                    className="rounded-xl border border-teal-700 bg-teal-800/70 px-4 py-2 text-sm font-semibold transition-all hover:bg-teal-700/70"
-                  >
-                    Customize
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
+        {/* AI Chat Widget */}
+        <section className="mb-12">
+          <ProductAIChat />
         </section>
+
+        {/* Loading and Error States */}
+        {menuLoading && (
+          <div className="text-center py-10">
+            <p className="text-zinc-400">Loading menu...</p>
+          </div>
+        )}
+        
+        {menuError && (
+          <div className="text-center py-10">
+            <p className="text-red-400">Error loading menu: {menuError}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 rounded-lg border border-blue-600 bg-blue-800/50 px-4 py-2 text-sm font-medium hover:bg-blue-700/50"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Product row/grid (old design look) */}
+        {!menuLoading && !menuError && menu.length === 0 && (
+          <div className="text-center py-10">
+            <p className="text-zinc-400">No products available</p>
+          </div>
+        )}
+        
+        {!menuLoading && !menuError && menu.length > 0 && (
+          <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {menu.map((item: Item) => (
+              <article
+                key={item.id}
+                className={`overflow-hidden rounded-3xl border ${
+                  item.isSpecial 
+                    ? 'border-yellow-500 bg-yellow-900/20 shadow-lg shadow-yellow-500/20' 
+                    : 'border-zinc-800 bg-zinc-900/50'
+                }`}
+              >
+                <div className="h- w-full bg-zinc-800/50 relative overflow-hidden">
+                  {item.imageUrl ? (
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-zinc-800/50" />
+                  )}
+                  {item.isSpecial && (
+                    <div className="absolute top-2 right-2 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold">
+                      ⭐ SPECIAL
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2 p-5">
+                  <h3 className="text-lg font-semibold">{item.name}</h3>
+                  <p className="text-sm text-zinc-400 line-clamp-2">{item.description}</p>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="font-semibold">${item.basePrice.toFixed(2)}</span>
+                    <button
+                      onClick={() => setActive(item)}
+                      className="rounded-xl border border-teal-700 bg-teal-800/70 px-4 py-2 text-sm font-semibold transition-all hover:bg-teal-700/70"
+                    >
+                      Customize
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
 
         {/* Summary + Go to Cart (bottom-right) */}
         <div className="mt-10 flex items-center justify-end gap-4">
@@ -362,15 +443,7 @@ function CustomizeModal({
 }: {
   item: Item;
   onClose: () => void;
-  onAdd: (line: {
-    id: string;
-    itemId: string;
-    name: string;
-    quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-    selections: Record<string, string[]>;
-  }) => void;
+  onAdd: (line: CartItem) => void;
 }) {
   const [quantity, setQuantity] = useState(1);
   const [selections, setSelections] = useState<Record<string, string[]>>({});
@@ -411,6 +484,7 @@ function CustomizeModal({
       unitPrice,
       totalPrice: unitPrice * quantity,
       selections,
+      imageUrl: item.imageUrl,
     });
   };
 
