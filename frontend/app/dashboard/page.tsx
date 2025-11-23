@@ -219,7 +219,6 @@ export default function OldDesignMenuPage() {
       try {
         setMenuLoading(true);
         const apiUrl = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || 'http://localhost:5000').replace(/\/$/, '');
-        console.log('🍹 Fetching products from:', `${apiUrl}/api/inventory`);
         
         const response = await fetch(`${apiUrl}/api/inventory`);
         
@@ -228,7 +227,6 @@ export default function OldDesignMenuPage() {
         }
         
         const data = await response.json();
-        console.log('📦 Received inventory data:', data);
         
         // Handle response format: { success: true, data: [...] } or just [...]
         const inventory = Array.isArray(data) ? data : data?.data || [];
@@ -238,12 +236,10 @@ export default function OldDesignMenuPage() {
           .filter((item: DbProduct) => item.category === 'product')
           .map((product: DbProduct) => convertToMenuItem(product));
         
-        console.log('✅ Loaded', products.length, 'products');
         setMenu(products);
         setMenuError(null);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
-        console.error('❌ Error fetching products:', errorMessage);
         setMenuError(errorMessage);
         setMenu([]);
       } finally {
