@@ -26,11 +26,7 @@ export default function HomePage() {
             Start Ordering
           </NavButton>
 
-          {/* Start ordering in Spanish */}
-          <NavButton href="/login?lang=es" ariaLabel="Empezar a ordenar en español">
-            empezar a ordenar
-          </NavButton>
-
+          
           {/* Employee login */}
           <NavButton href="/manager-dashboard" variant="secondary" ariaLabel="Employees login">
             Employees Login
