@@ -58,11 +58,14 @@ const DEFAULT_TOPPING_OPTIONS: Group = {
   name: 'Toppings',
   type: 'multiple',
   options: [
-    { id: 'boba', name: 'Boba', priceDelta: 0.5 },
-    { id: 'grass', name: 'Grass Jelly', priceDelta: 0.5 },
-    { id: 'pudding', name: 'Egg Pudding', priceDelta: 0.75 },
-    { id: 'lychee', name: 'Lychee Jelly', priceDelta: 0.5 },
-    { id: 'strawberry', name: 'Strawberry Popping', priceDelta: 0.6 },
+    { id: 'tapioca', name: 'Tapioca Pearls', priceDelta: 0.75 },
+    { id: 'grass', name: 'Grass Jelly', priceDelta: 0.60 },
+    { id: 'red_bean', name: 'Red Bean', priceDelta: 0.80 },
+    { id: 'aloe', name: 'Aloe Vera', priceDelta: 0.70 },
+    { id: 'pudding', name: 'Pudding', priceDelta: 0.85 },
+    { id: 'oreo', name: 'Oreo Crumbs', priceDelta: 0.90 },
+    { id: 'cheese', name: 'Cheese Foam', priceDelta: 1.00 },
+    { id: 'rainbow', name: 'Rainbow Jelly', priceDelta: 0.95 },
   ],
 };
 

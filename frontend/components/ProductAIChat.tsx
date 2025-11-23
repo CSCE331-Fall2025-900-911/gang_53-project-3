@@ -14,7 +14,7 @@ export function ProductAIChat() {
     {
       id: '1',
       type: 'assistant',
-      content: 'Ask me anything about our products, prices, ingredients, or nutrition info!',
+      content: 'Hi! 👋 I\'m your Bobalicious assistant. Ask me anything about our products, prices, ingredients, nutrition, allergens, or recommendations!',
       timestamp: new Date(),
     },
   ]);
@@ -86,6 +86,7 @@ export function ProductAIChat() {
       {/* Header */}
       <div className="border-b border-zinc-800 bg-zinc-800/50 px-6 py-4">
         <h3 className="text-lg font-semibold">Product Assistant</h3>
+        <p className="text-xs text-zinc-400">Ask about prices, ingredients, nutrition, and more</p>
       </div>
 
       {/* Messages */}
