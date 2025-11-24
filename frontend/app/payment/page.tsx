@@ -1,11 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCart } from '@/lib/cart';
 
 export default function PaymentPage() {
   const { items, subtotal, clear } = useCart();
+  const [backendURL, setBackendURL] = useState('');
+
+  useEffect(() => {
+    const url =
+      typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        ? 'http://localhost:5000'
+        : (process.env.NEXT_PUBLIC_API_URL || 'https://gang53-project-3-backend.vercel.app');
+    setBackendURL(url.replace(/\/$/, ''));
+  }, []);
 
   const orderNumber = useMemo(
     () => `BOBA-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -18,6 +27,29 @@ export default function PaymentPage() {
   }, []);
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  const resetLanguagePreference = () => {
+    // Google Translate stores language choice in the googtrans cookie
+    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+    localStorage.removeItem('googtrans');
+    sessionStorage.removeItem('googtrans');
+  };
+
+  const handleEndOrder = async () => {
+    clear();
+    resetLanguagePreference();
+
+    try {
+      if (backendURL) {
+        await fetch(`${backendURL}/auth/logout`, { credentials: 'include' });
+      }
+    } catch (err) {
+      console.error('Logout failed, continuing to landing page', err);
+    } finally {
+      window.location.href = '/';
+    }
+  };
 
   const formatSelections = (selections: Record<string, string[]>) => {
     const labels = Object.values(selections ?? {}).flat();
@@ -90,12 +122,13 @@ export default function PaymentPage() {
               >
                 Start a New Order
               </Link>
-              <Link
-                href="/cart"
+              <button
+                type="button"
+                onClick={handleEndOrder}
                 className="block w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-center font-semibold hover:bg-zinc-800"
               >
-                View Cart
-              </Link>
+                End Order
+              </button>
             </div>
           </aside>
         </section>

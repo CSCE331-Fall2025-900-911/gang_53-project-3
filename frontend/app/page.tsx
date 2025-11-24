@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GoogleTranslate from "@/components/GoogleTranslate";
 
 export const metadata = {
   title: "Bobalicious",
@@ -18,6 +19,10 @@ export default function HomePage() {
             Freshly brewed. Made your way.
           </p>
         </header>
+
+        <div className="mt-6">
+          <GoogleTranslate />
+        </div>
 
         {/* Buttons */}
         <section className="mt-16 flex w-full flex-col items-center gap-10">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useCart, type CartItem } from '@/lib/cart';
 import { ProductAIChat } from '@/components/ProductAIChat';
@@ -125,23 +126,6 @@ export default function OldDesignMenuPage() {
   const [menu, setMenu] = useState<Item[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
   const [menuError, setMenuError] = useState<string | null>(null);
-
-  // Initialize translate widget
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as any).googleTranslateElementInit = function() {
-        new (window as any).google.translate.TranslateElement(
-          { pageLanguage: 'en' },
-          'google_translate_element'
-        );
-      };
-
-      const script = document.createElement('script');
-      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
 
   // Set backend URL based on environment
   useEffect(() => {
@@ -304,9 +288,8 @@ export default function OldDesignMenuPage() {
               )}
             </div>
 
-            {/* Right: Translate and logout */}
+            {/* Right: logout */}
             <div className="flex flex-col items-start gap-3 md:items-end">
-              <div id="google_translate_element"></div>
               {backendURL && user && (
                 <button
                   onClick={() => {
@@ -444,6 +427,7 @@ function CustomizeModal({
   onClose: () => void;
   onAdd: (line: CartItem) => void;
 }) {
+  const [mounted, setMounted] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const sizeGroup = item.optionGroups.find((g) => g.id === 'size');
@@ -487,7 +471,13 @@ function CustomizeModal({
     });
   };
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
       <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
         <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
@@ -556,6 +546,7 @@ function CustomizeModal({
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
