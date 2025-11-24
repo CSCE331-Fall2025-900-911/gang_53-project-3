@@ -102,6 +102,12 @@ export default function CartPage() {
         {/* Summary / Payment */}
         {items.length > 0 && (
           <section className="mt-8 flex flex-col items-center justify-end gap-4 md:flex-row">
+            <Link
+              href="/dashboard"
+              className="rounded-xl border border-teal-700 bg-teal-900/50 px-6 py-3 font-semibold text-teal-50 hover:bg-teal-800/70"
+            >
+              Back to Menu
+            </Link>
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-5 py-3 text-lg font-semibold">
               Total: ${subtotal.toFixed(2)}
             </div>
