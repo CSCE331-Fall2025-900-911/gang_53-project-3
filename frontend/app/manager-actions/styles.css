@@ -45,6 +45,15 @@ table {
 th, td { padding: 8px 12px; border-bottom: 1px solid #ddd; }
 th { background: #f0f0f0; }
 
+td input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+}
+
 .button-row {
   display: flex; justify-content: center; gap: 10px; margin-top: 15px;
 }

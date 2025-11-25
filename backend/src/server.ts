@@ -274,7 +274,102 @@ app.get('/api/health', async (req: Request, res: Response) => {
 });
 
 
-// ===== INVENTORY ROUTES =====
+// ===== INVENTORY ROUTES (Specific routes BEFORE generic ones) =====
+
+// Add item - MUST come before generic /api/inventory/:id routes
+app.post('/api/inventory/add', async (req: Request, res: Response) => {
+  try {
+    console.log('✅ POST /api/inventory/add endpoint hit');
+    console.log('📦 Request body:', req.body);
+    const { name, category, price, quantity_on_hand, reorder_level, seasonal } = req.body;
+    const result = await pool.query(
+      `INSERT INTO inventory (name, category, price, quantity_on_hand, reorder_level, seasonal)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [name, category, price, quantity_on_hand, reorder_level, seasonal]
+    );
+    console.log('✅ Item added successfully:', result.rows[0]);
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error adding inventory item:', error);
+    res.status(500).json({ success: false, error: 'Failed to add item' });
+  }
+});
+
+// Update item (supports partial updates with null values) - MUST come before generic /:id route
+app.put('/api/inventory/update/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, price, quantity_on_hand, reorder_level, seasonal } = req.body;
+
+    // Build dynamic UPDATE query with only provided fields
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (name !== null && name !== undefined) {
+      updates.push(`name = $${paramCount++}`);
+      values.push(name);
+    }
+    if (price !== null && price !== undefined) {
+      updates.push(`price = $${paramCount++}`);
+      values.push(price);
+    }
+    if (quantity_on_hand !== null && quantity_on_hand !== undefined) {
+      updates.push(`quantity_on_hand = $${paramCount++}`);
+      values.push(quantity_on_hand);
+    }
+    if (reorder_level !== null && reorder_level !== undefined) {
+      updates.push(`reorder_level = $${paramCount++}`);
+      values.push(reorder_level);
+    }
+    if (seasonal !== null && seasonal !== undefined) {
+      updates.push(`seasonal = $${paramCount++}`);
+      values.push(seasonal);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, error: 'No fields to update' });
+    }
+
+    values.push(id);
+    const query = `UPDATE inventory SET ${updates.join(', ')} WHERE inventory_id = $${paramCount} RETURNING *`;
+
+    const result = await pool.query(query, values);
+    if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Item not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating inventory item:', error);
+    res.status(500).json({ success: false, error: 'Failed to update item' });
+  }
+});
+
+// Restock item - MUST come before generic /:id route
+app.put('/api/inventory/restock/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { amount } = req.body;
+
+    if (amount === undefined || amount === null) {
+      return res.status(400).json({ success: false, error: 'Missing amount field' });
+    }
+
+    const result = await pool.query(
+      `UPDATE inventory 
+       SET quantity_on_hand = quantity_on_hand + $1 
+       WHERE inventory_id = $2 
+       RETURNING *`,
+      [amount, id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Item not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error restocking inventory item:', error);
+    res.status(500).json({ success: false, error: 'Failed to restock item' });
+  }
+});
+
+// Generic routes - come AFTER specific ones
 app.get('/api/inventory', async (req: Request, res: Response) => {
   try {
     console.log('📦 /api/inventory endpoint hit');
@@ -284,18 +379,6 @@ app.get('/api/inventory', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('❌ Error fetching inventory:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch inventory', details: error instanceof Error ? error.message : String(error) });
-  }
-});
-
-app.get('/api/inventory/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query('SELECT * FROM inventory WHERE inventory_id = $1', [id]);
-    if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Item not found' });
-    res.json({ success: true, data: result.rows[0] });
-  } catch (error) {
-    console.error('Error fetching inventory item:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch item' });
   }
 });
 
@@ -312,6 +395,18 @@ app.post('/api/inventory', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error adding inventory item:', error);
     res.status(500).json({ success: false, error: 'Failed to add item' });
+  }
+});
+
+app.get('/api/inventory/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM inventory WHERE inventory_id = $1', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Item not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error fetching inventory item:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch item' });
   }
 });
 
@@ -343,6 +438,69 @@ app.delete('/api/inventory/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error deleting inventory item:', error);
     res.status(500).json({ success: false, error: 'Failed to delete item' });
+  }
+});
+
+// ===== REPORTS ROUTES =====
+app.get('/api/reports/xreport', async (req: Request, res: Response) => {
+  try {
+    console.log('📊 X-Report endpoint hit');
+    // Get today's local date
+    const today = new Date();
+    const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    console.log('⏰ Today\'s date (Local):', localDate);
+    const result = await pool.query(
+      `SELECT 
+        EXTRACT(HOUR FROM o.order_date)::int as hour, 
+        COUNT(DISTINCT o.order_id)::int as order_count, 
+        COALESCE(SUM(oi.quantity * i.price), 0) + COALESCE(SUM(oit.quantity * ti.price), 0) as total_sales 
+      FROM orders o 
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id 
+      LEFT JOIN inventory i ON oi.inventory_id = i.inventory_id 
+      LEFT JOIN order_item_toppings oit ON oi.order_item_id = oit.order_item_id 
+      LEFT JOIN inventory ti ON oit.inventory_id = ti.inventory_id 
+      WHERE DATE(o.order_date) = $1::date
+      GROUP BY EXTRACT(HOUR FROM o.order_date) 
+      ORDER BY hour`,
+      [localDate]
+    );
+    console.log('✅ X-Report data:', result.rows);
+    console.log('Total rows returned:', result.rows.length);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('❌ Error fetching X report:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch X report' });
+  }
+});
+
+app.get('/api/reports/zreport', async (req: Request, res: Response) => {
+  try {
+    console.log('📊 Z-Report endpoint hit');
+    // Get today's local date
+    const today = new Date();
+    const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    console.log('⏰ Today\'s date (Local):', localDate);
+    const result = await pool.query(
+      `SELECT 
+        COUNT(DISTINCT o.order_id)::int as total_orders,
+        COALESCE(SUM(oi.quantity * i.price), 0) + COALESCE(SUM(oit.quantity * ti.price), 0) as total_sales,
+        ROUND(
+          (COALESCE(SUM(oi.quantity * i.price), 0) + COALESCE(SUM(oit.quantity * ti.price), 0)) / 
+          NULLIF(COUNT(DISTINCT o.order_id), 0)::numeric, 2
+        ) as avg_order_value
+      FROM orders o 
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id 
+      LEFT JOIN inventory i ON oi.inventory_id = i.inventory_id 
+      LEFT JOIN order_item_toppings oit ON oi.order_item_id = oit.order_item_id 
+      LEFT JOIN inventory ti ON oit.inventory_id = ti.inventory_id 
+      WHERE DATE(o.order_date) = $1::date`,
+      [localDate]
+    );
+    console.log('✅ Z-Report data:', result.rows[0]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('❌ Error fetching Z report:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch Z report' });
   }
 });
 
@@ -501,15 +659,72 @@ app.get('/api/employees', async (req: Request, res: Response) => {
 
 app.post('/api/employees', async (req: Request, res: Response) => {
   try {
-    const { name, role, username, password } = req.body;
-    const result = await pool.query(
-      `INSERT INTO employees (name, role, username, password)
-       VALUES ($1, $2, $3, $4) RETURNING employee_id, name, role, username`,
-      [name, role, username, password]
-    );
+    console.log('✅ POST /api/employees endpoint hit');
+    console.log('📦 Request body:', req.body);
+    const { employee_id, name, role, username, password } = req.body;
+    
+    let result;
+    if (employee_id) {
+      // If employee_id is provided, use it
+      result = await pool.query(
+        `INSERT INTO employees (employee_id, name, role, username, password)
+         VALUES ($1, $2, $3, $4, $5) RETURNING employee_id, name, role, username`,
+        [employee_id, name, role, username, password]
+      );
+    } else {
+      // Otherwise let the database generate it via sequence
+      result = await pool.query(
+        `INSERT INTO employees (name, role, username, password)
+         VALUES ($1, $2, $3, $4) RETURNING employee_id, name, role, username`,
+        [name, role, username, password]
+      );
+    }
+    console.log('✅ Employee added:', result.rows[0]);
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to add employee' });
+    console.error('❌ Error adding employee:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Failed to add employee';
+    console.error('Error details:', errorMsg);
+    res.status(500).json({ success: false, error: errorMsg });
+  }
+});
+
+app.put('/api/employees/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, role, username, password } = req.body;
+    const result = await pool.query(
+      `UPDATE employees 
+       SET name = $1, role = $2, username = $3, password = $4
+       WHERE employee_id = $5
+       RETURNING employee_id, name, role, username`,
+      [name, role, username, password, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
+    }
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to update employee' });
+  }
+});
+
+app.delete('/api/employees/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    console.log(`🗑️ DELETE /api/employees/${id}`);
+    const result = await pool.query(
+      `DELETE FROM employees WHERE employee_id = $1 RETURNING employee_id, name`,
+      [id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
+    }
+    console.log(`✅ Employee deleted:`, result.rows[0]);
+    res.json({ success: true, message: 'Employee deleted', data: result.rows[0] });
+  } catch (error) {
+    console.error('❌ Error deleting employee:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete employee' });
   }
 });
 
@@ -548,21 +763,26 @@ app.post('/api/login', async (req: Request, res: Response) => {
 });
 
 
-// Error handling middleware
+// 404 handler (must be after all route definitions)
+app.use((req: Request, res: Response) => {
+  console.log(`❌ 404: Route not found: ${req.method} ${req.path}`);
+  console.log(`📍 Full URL: ${req.method} ${req.originalUrl}`);
+  console.log(`📋 Accepted routes: GET/POST /api/inventory*, /auth/*, etc.`);
+  res.status(404).json({
+    success: false,
+    error: 'Route not found',
+    path: req.path,
+    method: req.method
+  });
+});
+
+// Error handling middleware (must be last)
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
     error: 'Something went wrong!',
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    error: 'Route not found'
   });
 });
 

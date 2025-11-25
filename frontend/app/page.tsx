@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function HomePage() {
   return (
-    <main className="min-h-dvh bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-zinc-100">
+    <main className="min-h-screen bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-zinc-100">
       <div className="mx-auto flex max-w-3xl flex-col items-center px-6 py-16 md:py-24">
         {/* Title */}
         <header className="w-full">

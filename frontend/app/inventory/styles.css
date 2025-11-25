@@ -22,6 +22,10 @@
     font-size: 1.8rem;
 }
 
+h2 {
+    text-align: center;
+}
+
 .back-btn {
     position: absolute;
     left: 20px;
@@ -49,7 +53,7 @@
 table {
     width: 100%;
     border-collapse: collapse;
-    text-align: left;
+    text-align: center;
 }
 
 th,
@@ -66,6 +70,7 @@ th {
 .button-row {
     margin-top: 15px;
     display: flex;
+    justify-content: center;
     gap: 10px;
 }
 
@@ -129,4 +134,52 @@ th {
 
 .refresh-btn:hover {
     background: linear-gradient(#e0e0e0, #d0d0d0);
+}
+
+/* Modal overlay */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+/* Modal content box */
+.modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Inputs */
+.modal-content input,
+.modal-content select {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* Buttons */
+.modal-content button {
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 6px;
+    border: none;
+    background: #ff7300;
+    color: white;
+    font-weight: bold;
+}
+
+.modal-content button:hover {
+    opacity: 0.85;
 }
