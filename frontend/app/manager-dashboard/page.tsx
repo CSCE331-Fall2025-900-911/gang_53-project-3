@@ -22,7 +22,10 @@ export default function DashboardPage() {
             </main>
 
             <footer className="dashboard-footer">
-                <button onClick={() => router.push("/login")} className="btn">Logout</button>
+                <button onClick={() => {
+                    // Clear any manager session data if needed
+                    router.push("/");
+                }} className="btn">Logout</button>
             </footer>
         </div>
     );

@@ -441,6 +441,69 @@ app.delete('/api/inventory/:id', async (req: Request, res: Response) => {
   }
 });
 
+// ===== REPORTS ROUTES =====
+app.get('/api/reports/xreport', async (req: Request, res: Response) => {
+  try {
+    console.log('📊 X-Report endpoint hit');
+    // Get today's local date
+    const today = new Date();
+    const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    console.log('⏰ Today\'s date (Local):', localDate);
+    const result = await pool.query(
+      `SELECT 
+        EXTRACT(HOUR FROM o.order_date)::int as hour, 
+        COUNT(DISTINCT o.order_id)::int as order_count, 
+        COALESCE(SUM(oi.quantity * i.price), 0) + COALESCE(SUM(oit.quantity * ti.price), 0) as total_sales 
+      FROM orders o 
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id 
+      LEFT JOIN inventory i ON oi.inventory_id = i.inventory_id 
+      LEFT JOIN order_item_toppings oit ON oi.order_item_id = oit.order_item_id 
+      LEFT JOIN inventory ti ON oit.inventory_id = ti.inventory_id 
+      WHERE DATE(o.order_date) = $1::date
+      GROUP BY EXTRACT(HOUR FROM o.order_date) 
+      ORDER BY hour`,
+      [localDate]
+    );
+    console.log('✅ X-Report data:', result.rows);
+    console.log('Total rows returned:', result.rows.length);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('❌ Error fetching X report:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch X report' });
+  }
+});
+
+app.get('/api/reports/zreport', async (req: Request, res: Response) => {
+  try {
+    console.log('📊 Z-Report endpoint hit');
+    // Get today's local date
+    const today = new Date();
+    const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    console.log('⏰ Today\'s date (Local):', localDate);
+    const result = await pool.query(
+      `SELECT 
+        COUNT(DISTINCT o.order_id)::int as total_orders,
+        COALESCE(SUM(oi.quantity * i.price), 0) + COALESCE(SUM(oit.quantity * ti.price), 0) as total_sales,
+        ROUND(
+          (COALESCE(SUM(oi.quantity * i.price), 0) + COALESCE(SUM(oit.quantity * ti.price), 0)) / 
+          NULLIF(COUNT(DISTINCT o.order_id), 0)::numeric, 2
+        ) as avg_order_value
+      FROM orders o 
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id 
+      LEFT JOIN inventory i ON oi.inventory_id = i.inventory_id 
+      LEFT JOIN order_item_toppings oit ON oi.order_item_id = oit.order_item_id 
+      LEFT JOIN inventory ti ON oit.inventory_id = ti.inventory_id 
+      WHERE DATE(o.order_date) = $1::date`,
+      [localDate]
+    );
+    console.log('✅ Z-Report data:', result.rows[0]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('❌ Error fetching Z report:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch Z report' });
+  }
+});
+
 // ===== USAGE ROUTES =====
 app.get('/api/usage', async (req: Request, res: Response) => {
   try {
@@ -596,15 +659,72 @@ app.get('/api/employees', async (req: Request, res: Response) => {
 
 app.post('/api/employees', async (req: Request, res: Response) => {
   try {
-    const { name, role, username, password } = req.body;
-    const result = await pool.query(
-      `INSERT INTO employees (name, role, username, password)
-       VALUES ($1, $2, $3, $4) RETURNING employee_id, name, role, username`,
-      [name, role, username, password]
-    );
+    console.log('✅ POST /api/employees endpoint hit');
+    console.log('📦 Request body:', req.body);
+    const { employee_id, name, role, username, password } = req.body;
+    
+    let result;
+    if (employee_id) {
+      // If employee_id is provided, use it
+      result = await pool.query(
+        `INSERT INTO employees (employee_id, name, role, username, password)
+         VALUES ($1, $2, $3, $4, $5) RETURNING employee_id, name, role, username`,
+        [employee_id, name, role, username, password]
+      );
+    } else {
+      // Otherwise let the database generate it via sequence
+      result = await pool.query(
+        `INSERT INTO employees (name, role, username, password)
+         VALUES ($1, $2, $3, $4) RETURNING employee_id, name, role, username`,
+        [name, role, username, password]
+      );
+    }
+    console.log('✅ Employee added:', result.rows[0]);
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to add employee' });
+    console.error('❌ Error adding employee:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Failed to add employee';
+    console.error('Error details:', errorMsg);
+    res.status(500).json({ success: false, error: errorMsg });
+  }
+});
+
+app.put('/api/employees/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, role, username, password } = req.body;
+    const result = await pool.query(
+      `UPDATE employees 
+       SET name = $1, role = $2, username = $3, password = $4
+       WHERE employee_id = $5
+       RETURNING employee_id, name, role, username`,
+      [name, role, username, password, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
+    }
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to update employee' });
+  }
+});
+
+app.delete('/api/employees/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    console.log(`🗑️ DELETE /api/employees/${id}`);
+    const result = await pool.query(
+      `DELETE FROM employees WHERE employee_id = $1 RETURNING employee_id, name`,
+      [id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
+    }
+    console.log(`✅ Employee deleted:`, result.rows[0]);
+    res.json({ success: true, message: 'Employee deleted', data: result.rows[0] });
+  } catch (error) {
+    console.error('❌ Error deleting employee:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete employee' });
   }
 });
 
