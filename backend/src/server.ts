@@ -274,7 +274,102 @@ app.get('/api/health', async (req: Request, res: Response) => {
 });
 
 
-// ===== INVENTORY ROUTES =====
+// ===== INVENTORY ROUTES (Specific routes BEFORE generic ones) =====
+
+// Add item - MUST come before generic /api/inventory/:id routes
+app.post('/api/inventory/add', async (req: Request, res: Response) => {
+  try {
+    console.log('✅ POST /api/inventory/add endpoint hit');
+    console.log('📦 Request body:', req.body);
+    const { name, category, price, quantity_on_hand, reorder_level, seasonal } = req.body;
+    const result = await pool.query(
+      `INSERT INTO inventory (name, category, price, quantity_on_hand, reorder_level, seasonal)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [name, category, price, quantity_on_hand, reorder_level, seasonal]
+    );
+    console.log('✅ Item added successfully:', result.rows[0]);
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error adding inventory item:', error);
+    res.status(500).json({ success: false, error: 'Failed to add item' });
+  }
+});
+
+// Update item (supports partial updates with null values) - MUST come before generic /:id route
+app.put('/api/inventory/update/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, price, quantity_on_hand, reorder_level, seasonal } = req.body;
+
+    // Build dynamic UPDATE query with only provided fields
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (name !== null && name !== undefined) {
+      updates.push(`name = $${paramCount++}`);
+      values.push(name);
+    }
+    if (price !== null && price !== undefined) {
+      updates.push(`price = $${paramCount++}`);
+      values.push(price);
+    }
+    if (quantity_on_hand !== null && quantity_on_hand !== undefined) {
+      updates.push(`quantity_on_hand = $${paramCount++}`);
+      values.push(quantity_on_hand);
+    }
+    if (reorder_level !== null && reorder_level !== undefined) {
+      updates.push(`reorder_level = $${paramCount++}`);
+      values.push(reorder_level);
+    }
+    if (seasonal !== null && seasonal !== undefined) {
+      updates.push(`seasonal = $${paramCount++}`);
+      values.push(seasonal);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, error: 'No fields to update' });
+    }
+
+    values.push(id);
+    const query = `UPDATE inventory SET ${updates.join(', ')} WHERE inventory_id = $${paramCount} RETURNING *`;
+
+    const result = await pool.query(query, values);
+    if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Item not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating inventory item:', error);
+    res.status(500).json({ success: false, error: 'Failed to update item' });
+  }
+});
+
+// Restock item - MUST come before generic /:id route
+app.put('/api/inventory/restock/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { amount } = req.body;
+
+    if (amount === undefined || amount === null) {
+      return res.status(400).json({ success: false, error: 'Missing amount field' });
+    }
+
+    const result = await pool.query(
+      `UPDATE inventory 
+       SET quantity_on_hand = quantity_on_hand + $1 
+       WHERE inventory_id = $2 
+       RETURNING *`,
+      [amount, id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Item not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error restocking inventory item:', error);
+    res.status(500).json({ success: false, error: 'Failed to restock item' });
+  }
+});
+
+// Generic routes - come AFTER specific ones
 app.get('/api/inventory', async (req: Request, res: Response) => {
   try {
     console.log('📦 /api/inventory endpoint hit');
@@ -284,18 +379,6 @@ app.get('/api/inventory', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('❌ Error fetching inventory:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch inventory', details: error instanceof Error ? error.message : String(error) });
-  }
-});
-
-app.get('/api/inventory/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query('SELECT * FROM inventory WHERE inventory_id = $1', [id]);
-    if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Item not found' });
-    res.json({ success: true, data: result.rows[0] });
-  } catch (error) {
-    console.error('Error fetching inventory item:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch item' });
   }
 });
 
@@ -312,6 +395,18 @@ app.post('/api/inventory', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error adding inventory item:', error);
     res.status(500).json({ success: false, error: 'Failed to add item' });
+  }
+});
+
+app.get('/api/inventory/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM inventory WHERE inventory_id = $1', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Item not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error fetching inventory item:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch item' });
   }
 });
 
@@ -548,21 +643,26 @@ app.post('/api/login', async (req: Request, res: Response) => {
 });
 
 
-// Error handling middleware
+// 404 handler (must be after all route definitions)
+app.use((req: Request, res: Response) => {
+  console.log(`❌ 404: Route not found: ${req.method} ${req.path}`);
+  console.log(`📍 Full URL: ${req.method} ${req.originalUrl}`);
+  console.log(`📋 Accepted routes: GET/POST /api/inventory*, /auth/*, etc.`);
+  res.status(404).json({
+    success: false,
+    error: 'Route not found',
+    path: req.path,
+    method: req.method
+  });
+});
+
+// Error handling middleware (must be last)
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
     error: 'Something went wrong!',
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    error: 'Route not found'
   });
 });
 
