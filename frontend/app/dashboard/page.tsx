@@ -481,16 +481,16 @@ function CustomizeModal({
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
       <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
         <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
-          <h4 className="text-lg font-semibold">Customize — {item.name}</h4>
-          <button onClick={onClose} className="rounded-lg border border-zinc-700 px-3 py-1">✕</button>
+          <h4 className="text-lg font-semibold text-white">Customize — {item.name}</h4>
+          <button onClick={onClose} className="rounded-lg border border-zinc-700 px-3 py-1 text-white">✕</button>
         </header>
 
         <div className="max-h-[70vh] space-y-6 overflow-y-auto px-6 py-5">
           {item.optionGroups.map((g) => (
             <section key={g.id} className="space-y-3">
               <div className="flex items-center justify-between">
-                <h5 className="font-semibold">{g.name}</h5>
-                <span className="text-xs text-zinc-400">
+                <h5 className="font-semibold text-white">{g.name}</h5>
+                <span className="text-xs text-white">
                   {g.type === 'single' ? 'Choose 1' : 'Choose any'}
                 </span>
               </div>
@@ -509,11 +509,11 @@ function CustomizeModal({
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">{o.name}</span>
+                        <span className="font-medium text-white">{o.name}</span>
                         {o.priceDelta ? (
-                          <span className="text-sm text-zinc-300">+${o.priceDelta.toFixed(2)}</span>
+                          <span className="text-sm text-white">+${o.priceDelta.toFixed(2)}</span>
                         ) : (
-                          <span className="text-sm text-zinc-500">Included</span>
+                          <span className="text-sm text-white">Included</span>
                         )}
                       </div>
                     </button>
@@ -525,22 +525,22 @@ function CustomizeModal({
 
           <section className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-zinc-400">Qty</span>
+              <span className="text-sm text-white">Qty</span>
               <div className="flex items-center rounded-xl border border-zinc-700">
-                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-2">-</button>
-                <span className="px-4">{quantity}</span>
-                <button onClick={() => setQuantity((q) => q + 1)} className="px-3 py-2">+</button>
+                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-2 text-white">-</button>
+                <span className="px-4 text-white">{quantity}</span>
+                <button onClick={() => setQuantity((q) => q + 1)} className="px-3 py-2 text-white">+</button>
               </div>
             </div>
-            <div className="text-lg font-semibold">${(unitPrice * quantity).toFixed(2)}</div>
+            <div className="text-lg font-semibold text-white">${(unitPrice * quantity).toFixed(2)}</div>
           </section>
         </div>
 
         <footer className="flex items-center justify-end gap-3 border-t border-zinc-800 px-6 py-4">
-          <button onClick={onClose} className="rounded-xl border border-zinc-700 bg-zinc-900 px-5 py-2">Cancel</button>
+          <button onClick={onClose} className="rounded-xl border border-zinc-700 bg-zinc-900 px-5 py-2 text-white">Cancel</button>
           <button
             onClick={handleAdd}
-            className="rounded-xl border border-teal-700 bg-teal-800/70 px-6 py-2 font-semibold hover:bg-teal-700/70"
+            className="rounded-xl border border-teal-700 bg-teal-800/70 px-6 py-2 font-semibold text-white hover:bg-teal-700/70"
           >
             Add to Cart
           </button>
