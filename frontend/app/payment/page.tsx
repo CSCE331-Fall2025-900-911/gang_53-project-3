@@ -91,7 +91,7 @@ export default function PaymentPage() {
 
     try {
       const payload = {
-        customerName: "Guest",
+        customer_name: "Guest",
         items: items.map((i) => ({
           itemId: i.itemId, // must be string
           quantity: i.quantity, // number
