@@ -9,14 +9,12 @@ const SUBMISSION_FLAG = "boba-order-submitted";
 export default function PaymentPage() {
   const { items, subtotal, clear } = useCart();
   const [apiBase, setApiBase] = useState<string>(process.env.NEXT_PUBLIC_API_URL || "");
-  const [orderStatus, setOrderStatus] = useState<
-    "processing" | "success" | "error"
-  >("processing");
+  const [orderStatus, setOrderStatus] = useState<"idle" | "processing" | "success" | "error">("idle"); // 🔥 CHANGED
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const submissionGuard = useRef(false);
 
-  // Set API base first
+  // Determine API base URL
   useEffect(() => {
     if (typeof window === "undefined") return;
     const envUrl = (process.env.NEXT_PUBLIC_API_URL || "").trim();
@@ -26,6 +24,7 @@ export default function PaymentPage() {
       : envUrl
       ? envUrl.replace(/\/$/, "")
       : window.location.origin;
+
     setApiBase(base);
   }, []);
 
@@ -55,33 +54,23 @@ export default function PaymentPage() {
   };
 
   const resetLanguagePreference = () => {
-    document.cookie =
-      "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
     document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
     localStorage.removeItem("googtrans");
     sessionStorage.removeItem("googtrans");
   };
 
+  // 🔥 USER MUST CLICK THIS BUTTON NOW
   const submitOrder = useCallback(async () => {
-    // Check if already submitted
-    if (
-      typeof window !== "undefined" &&
-      sessionStorage.getItem(SUBMISSION_FLAG) === "1"
-    ) {
-      setOrderStatus("success");
-      return;
-    }
+    if (submissionGuard.current) return;
 
     if (!items.length) {
       setOrderStatus("success");
       return;
     }
 
-    if (submissionGuard.current) return;
-
-    // Don't submit if apiBase isn't ready
     if (!apiBase) {
-      console.warn("API base not ready yet");
+      alert("API is not ready yet. Please try again.");
       return;
     }
 
@@ -93,18 +82,15 @@ export default function PaymentPage() {
       const payload = {
         customer_name: "Guest",
         items: items.map((i) => ({
-          itemId: i.itemId, // must be string
-          quantity: i.quantity, // number
-          name: i.name, // string
-          selections: {
-            // MUST be object-of-arrays, never empty object unless needed
-            ...i.selections,
-          },
+          itemId: i.itemId,
+          quantity: i.quantity,
+          name: i.name,
+          selections: { ...i.selections },
         })),
       };
 
       const endpoint = `${apiBase}/api/orders`;
-      console.log("Submitting order to:", endpoint); // Debug log
+      console.log("Submitting order to:", endpoint);
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -112,11 +98,8 @@ export default function PaymentPage() {
         body: JSON.stringify(payload),
       });
 
-      console.log(res);
-
       if (!res.ok) {
         const text = await res.text();
-        console.error("Order submission failed:", text); // Debug log
         throw new Error(text || `Order service returned ${res.status}`);
       }
 
@@ -127,22 +110,15 @@ export default function PaymentPage() {
       setOrderStatus("success");
     } catch (err) {
       submissionGuard.current = false;
-      const message =
-        err instanceof Error ? err.message : "Failed to submit order";
-      console.error("Order error:", message); // Debug log
+      const message = err instanceof Error ? err.message : "Failed to submit order";
+      console.error("Order error:", message);
       setOrderError(message);
       setOrderStatus("error");
     }
-  }, [apiBase, items]); // Added apiBase to dependencies
-
-  // Submit order when apiBase is ready
-  useEffect(() => {
-    if (!apiBase) return; // Wait for apiBase to be set
-    submitOrder();
-  }, [apiBase, submitOrder]); // Trigger when apiBase or submitOrder changes
+  }, [apiBase, items]);
 
   const handleRetry = () => {
-    submissionGuard.current = false; // Reset guard
+    submissionGuard.current = false;
     clearSubmissionFlag();
     submitOrder();
   };
@@ -151,20 +127,18 @@ export default function PaymentPage() {
     clear();
     clearSubmissionFlag();
     resetLanguagePreference();
-
     try {
       if (apiBase) {
         await fetch(`${apiBase}/auth/logout`, { credentials: "include" });
       }
-    } catch (err) {
-      console.error("Logout failed, continuing to landing page", err);
-    } finally {
-      window.location.href = "/";
-    }
+    } catch {}
+    window.location.href = "/";
   };
 
   const statusLabel =
-    orderStatus === "processing"
+    orderStatus === "idle"
+      ? "Review Your Order"
+      : orderStatus === "processing"
       ? "Processing Order"
       : orderStatus === "error"
       ? "Order Failed"
@@ -177,14 +151,20 @@ export default function PaymentPage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-700/70 bg-emerald-900/40 px-4 py-1 text-sm font-semibold text-emerald-100">
             {statusLabel}
           </div>
+
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
             {orderStatus === "error"
-              ? "One more step"
-              : "Thanks for your order!"}
+              ? "Try Again"
+              : orderStatus === "success"
+              ? "Thanks for your order!"
+              : "Confirm Your Order"}
           </h1>
-          <p className="text-sm text-zinc-400">
-            Order #{orderId ?? orderNumber} • Estimated ready by {readyTime}
-          </p>
+
+          {orderStatus !== "idle" && (
+            <p className="text-sm text-zinc-400">
+              Order #{orderId ?? orderNumber} • Estimated ready by {readyTime}
+            </p>
+          )}
         </header>
 
         <section className="grid gap-6 lg:grid-cols-3">
@@ -197,7 +177,7 @@ export default function PaymentPage() {
             </div>
 
             {items.length === 0 ? (
-              <p className="text-zinc-400">Looks like your cart is empty.</p>
+              <p className="text-zinc-400">Your cart is empty.</p>
             ) : (
               <ul className="divide-y divide-zinc-800">
                 {items.map((item) => (
@@ -225,37 +205,32 @@ export default function PaymentPage() {
 
           <aside className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
             <div className="flex items-center justify-between text-lg font-semibold">
-              <span>Total paid</span>
+              <span>Total</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
 
             {orderStatus === "processing" && (
               <p className="text-sm text-zinc-400">Submitting your order...</p>
             )}
-            {orderStatus === "success" && (
-              <p className="text-sm text-zinc-400">
-                You'll receive a confirmation email shortly. If you need to make
-                changes, head back to your cart.
-              </p>
-            )}
+
             {orderStatus === "error" && (
               <p className="text-sm text-red-300">
-                We could not finalize your order.{" "}
-                {orderError || "Please try again."}
+                Could not finalize your order. {orderError}
               </p>
             )}
 
             <div className="space-y-3">
-              <Link
-                href="/dashboard"
-                onClick={() => {
-                  clearSubmissionFlag();
-                  clear();
-                }}
-                className="block w-full rounded-xl border border-teal-700 bg-teal-800/70 px-4 py-3 text-center font-semibold hover:bg-teal-700/70"
-              >
-                Start a New Order
-              </Link>
+              {/* 🔥 NEW SUBMIT BUTTON */}
+              {orderStatus === "idle" && (
+                <button
+                  type="button"
+                  onClick={submitOrder}
+                  className="block w-full rounded-xl border border-blue-700 bg-blue-800/70 px-4 py-3 text-center font-semibold hover:bg-blue-700/60"
+                >
+                  Submit Order
+                </button>
+              )}
+
               {orderStatus === "error" && (
                 <button
                   type="button"
@@ -265,6 +240,20 @@ export default function PaymentPage() {
                   Retry Submission
                 </button>
               )}
+
+              {orderStatus === "success" && (
+                <Link
+                  href="/dashboard"
+                  onClick={() => {
+                    clearSubmissionFlag();
+                    clear();
+                  }}
+                  className="block w-full rounded-xl border border-teal-700 bg-teal-800/70 px-4 py-3 text-center font-semibold hover:bg-teal-700/60"
+                >
+                  Start a New Order
+                </Link>
+              )}
+
               <button
                 type="button"
                 onClick={handleEndOrder}
