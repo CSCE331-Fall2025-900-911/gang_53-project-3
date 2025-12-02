@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import BackButton from '@/components/BackButton';
 import Link from 'next/link';
 
 function LoginContent() {
@@ -63,6 +64,7 @@ function LoginContent() {
         </p>
         {/* Spanish line can be added later */}
         {/* <p className="mt-1 text-zinc-400">¿Quieres iniciar sesión?</p> */}
+          <BackButton/>
       </section>
 
       {/* Form card */}

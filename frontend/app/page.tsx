@@ -1,5 +1,9 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import Link from "next/link";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import BackButton from "@/components/BackButton";
 
 export const metadata = {
   title: "Bobalicious",
@@ -20,9 +24,12 @@ export default function HomePage() {
           </p>
         </header>
 
-        <div className="mt-6">
+        {/* <div className="mt-6"> */}
+        <nav className="flex justify-between items-center">
+
           <GoogleTranslate />
-        </div>
+        </nav>
+        {/* </div> */}
 
         {/* Buttons */}
         <section className="mt-16 flex w-full flex-col items-center gap-10">
@@ -31,7 +38,6 @@ export default function HomePage() {
             Start Ordering
           </NavButton>
 
-          
           {/* Employee login */}
           <NavButton href="/manager-dashboard" variant="secondary" ariaLabel="Employees login">
             Employees Login

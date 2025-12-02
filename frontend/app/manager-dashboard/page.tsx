@@ -2,6 +2,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import "./styles.css";
+import BackButton from "@/components/BackButton";
 
 export default function DashboardPage() {
     const router = useRouter();
@@ -13,6 +14,7 @@ export default function DashboardPage() {
                     <p>Currently logged in as: <strong>Joe Biden</strong></p>
                     <p>Account type: <strong>Manager</strong></p>
                 </div>
+                <BackButton/>   
             </header>
 
             <main className="dashboard-main">
@@ -22,10 +24,10 @@ export default function DashboardPage() {
             </main>
 
             <footer className="dashboard-footer">
-                <button onClick={() => {
+                {/* <button onClick={() => {
                     // Clear any manager session data if needed
                     router.push("/");
-                }} className="btn">Logout</button>
+                }} className="btn">Logout</button> */}
             </footer>
         </div>
     );
