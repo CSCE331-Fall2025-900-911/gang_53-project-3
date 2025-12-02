@@ -1,28 +1,31 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useCart } from '@/lib/cart';
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCart } from "@/lib/cart";
 
-const SUBMISSION_FLAG = 'boba-order-submitted';
+const SUBMISSION_FLAG = "boba-order-submitted";
 
 export default function PaymentPage() {
   const { items, subtotal, clear } = useCart();
-  const [apiBase, setApiBase] = useState<string>('');
-  const [orderStatus, setOrderStatus] = useState<'processing' | 'success' | 'error'>(
-    'processing'
-  );
+  const [apiBase, setApiBase] = useState<string>(process.env.NEXT_PUBLIC_API_URL || "");
+  const [orderStatus, setOrderStatus] = useState<
+    "processing" | "success" | "error"
+  >("processing");
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const submissionGuard = useRef(false);
 
+  // Set API base first
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const envUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
-    const isLocal = window.location.hostname === 'localhost';
+    if (typeof window === "undefined") return;
+    const envUrl = (process.env.NEXT_PUBLIC_API_URL || "").trim();
+    const isLocal = window.location.hostname === "localhost";
     const base = isLocal
       ? window.location.origin
-      : (envUrl ? envUrl.replace(/\/$/, '') : window.location.origin);
+      : envUrl
+      ? envUrl.replace(/\/$/, "")
+      : window.location.origin;
     setApiBase(base);
   }, []);
 
@@ -33,86 +36,113 @@ export default function PaymentPage() {
 
   const readyTime = useMemo(() => {
     const eta = new Date(Date.now() + 12 * 60 * 1000);
-    return eta.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return eta.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
   }, []);
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const formatSelections = (selections: Record<string, string[]>) => {
     const labels = Object.values(selections ?? {}).flat();
-    return labels.length ? labels.join(', ') : 'No customizations';
+    return labels.length ? labels.join(", ") : "No customizations";
   };
 
   const clearSubmissionFlag = () => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     sessionStorage.removeItem(SUBMISSION_FLAG);
   };
 
   const resetLanguagePreference = () => {
-    // Google Translate stores language choice in the googtrans cookie
-    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    document.cookie =
+      "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
     document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
-    localStorage.removeItem('googtrans');
-    sessionStorage.removeItem('googtrans');
+    localStorage.removeItem("googtrans");
+    sessionStorage.removeItem("googtrans");
   };
 
   const submitOrder = useCallback(async () => {
-    if (!items.length) {
-      setOrderStatus('success');
+    // Check if already submitted
+    if (
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(SUBMISSION_FLAG) === "1"
+    ) {
+      setOrderStatus("success");
       return;
     }
+
+    if (!items.length) {
+      setOrderStatus("success");
+      return;
+    }
+
     if (submissionGuard.current) return;
 
+    // Don't submit if apiBase isn't ready
+    if (!apiBase) {
+      console.warn("API base not ready yet");
+      return;
+    }
+
     submissionGuard.current = true;
-    setOrderStatus('processing');
+    setOrderStatus("processing");
     setOrderError(null);
 
     try {
       const payload = {
-        customerName: 'Guest',
+        customerName: "Guest",
         items: items.map((i) => ({
-          itemId: i.itemId,
-          quantity: i.quantity,
-          selections: i.selections,
-          name: i.name,
+          itemId: i.itemId, // must be string
+          quantity: i.quantity, // number
+          name: i.name, // string
+          selections: {
+            // MUST be object-of-arrays, never empty object unless needed
+            ...i.selections,
+          },
         })),
       };
 
       const endpoint = `${apiBase}/api/orders`;
+      console.log("Submitting order to:", endpoint); // Debug log
+
       const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
+      console.log(res);
+
       if (!res.ok) {
         const text = await res.text();
+        console.error("Order submission failed:", text); // Debug log
         throw new Error(text || `Order service returned ${res.status}`);
       }
 
       const data = await res.json().catch(() => ({}));
       if (data?.orderId) setOrderId(String(data.orderId));
 
-      sessionStorage.setItem(SUBMISSION_FLAG, '1');
-      setOrderStatus('success');
+      sessionStorage.setItem(SUBMISSION_FLAG, "1");
+      setOrderStatus("success");
     } catch (err) {
       submissionGuard.current = false;
-      const message = err instanceof Error ? err.message : 'Failed to submit order';
+      const message =
+        err instanceof Error ? err.message : "Failed to submit order";
+      console.error("Order error:", message); // Debug log
       setOrderError(message);
-      setOrderStatus('error');
+      setOrderStatus("error");
     }
-  }, [apiBase, items]);
+  }, [apiBase, items]); // Added apiBase to dependencies
 
+  // Submit order when apiBase is ready
   useEffect(() => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem(SUBMISSION_FLAG) === '1') {
-      setOrderStatus('success');
-      return;
-    }
-
+    if (!apiBase) return; // Wait for apiBase to be set
     submitOrder();
-  }, [submitOrder]);
+  }, [apiBase, submitOrder]); // Trigger when apiBase or submitOrder changes
 
   const handleRetry = () => {
+    submissionGuard.current = false; // Reset guard
     clearSubmissionFlag();
     submitOrder();
   };
@@ -124,21 +154,21 @@ export default function PaymentPage() {
 
     try {
       if (apiBase) {
-        await fetch(`${apiBase}/auth/logout`, { credentials: 'include' });
+        await fetch(`${apiBase}/auth/logout`, { credentials: "include" });
       }
     } catch (err) {
-      console.error('Logout failed, continuing to landing page', err);
+      console.error("Logout failed, continuing to landing page", err);
     } finally {
-      window.location.href = '/';
+      window.location.href = "/";
     }
   };
 
   const statusLabel =
-    orderStatus === 'processing'
-      ? 'Processing Order'
-      : orderStatus === 'error'
-        ? 'Order Failed'
-        : 'Payment Successful';
+    orderStatus === "processing"
+      ? "Processing Order"
+      : orderStatus === "error"
+      ? "Order Failed"
+      : "Payment Successful";
 
   return (
     <main className="min-h-dvh bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-zinc-100">
@@ -148,7 +178,9 @@ export default function PaymentPage() {
             {statusLabel}
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-            {orderStatus === 'error' ? 'One more step' : 'Thanks for your order!'}
+            {orderStatus === "error"
+              ? "One more step"
+              : "Thanks for your order!"}
           </h1>
           <p className="text-sm text-zinc-400">
             Order #{orderId ?? orderNumber} • Estimated ready by {readyTime}
@@ -160,7 +192,7 @@ export default function PaymentPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Order Summary</h2>
               <span className="text-sm text-zinc-400">
-                {itemCount} item{itemCount === 1 ? '' : 's'}
+                {itemCount} item{itemCount === 1 ? "" : "s"}
               </span>
             </div>
 
@@ -169,7 +201,10 @@ export default function PaymentPage() {
             ) : (
               <ul className="divide-y divide-zinc-800">
                 {items.map((item) => (
-                  <li key={item.id} className="flex items-start justify-between gap-4 py-3">
+                  <li
+                    key={item.id}
+                    className="flex items-start justify-between gap-4 py-3"
+                  >
                     <div>
                       <p className="font-semibold">{item.name}</p>
                       <p className="text-sm text-zinc-400">
@@ -194,18 +229,19 @@ export default function PaymentPage() {
               <span>${subtotal.toFixed(2)}</span>
             </div>
 
-            {orderStatus === 'processing' && (
+            {orderStatus === "processing" && (
               <p className="text-sm text-zinc-400">Submitting your order...</p>
             )}
-            {orderStatus === 'success' && (
+            {orderStatus === "success" && (
               <p className="text-sm text-zinc-400">
-                You'll receive a confirmation email shortly. If you need to make changes,
-                head back to your cart.
+                You'll receive a confirmation email shortly. If you need to make
+                changes, head back to your cart.
               </p>
             )}
-            {orderStatus === 'error' && (
+            {orderStatus === "error" && (
               <p className="text-sm text-red-300">
-                We could not finalize your order. {orderError || 'Please try again.'}
+                We could not finalize your order.{" "}
+                {orderError || "Please try again."}
               </p>
             )}
 
@@ -220,7 +256,7 @@ export default function PaymentPage() {
               >
                 Start a New Order
               </Link>
-              {orderStatus === 'error' && (
+              {orderStatus === "error" && (
                 <button
                   type="button"
                   onClick={handleRetry}
