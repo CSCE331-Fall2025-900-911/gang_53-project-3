@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     await client.query("BEGIN");
 
     const orderResult = await client.query(
-      "INSERT INTO orders (customer_name) VALUES ($1) RETURNING order_id",
+      "INSERT INTO orders (customerName) VALUES ($1) RETURNING order_id",
       [customerName || "Guest"]
     );
     const orderId = orderResult.rows[0].order_id;
