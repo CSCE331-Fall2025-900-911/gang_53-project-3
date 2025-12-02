@@ -23,7 +23,21 @@ export default async function handler(req, res) {
       .json({ success: false, error: "Method not allowed" });
   }
 
-  const { items, customerName } = req.body || {};
+  // 🔥 FIX: Vercel does NOT auto-parse JSON bodies in serverless functions
+  let body = req.body;
+  if (!body || typeof body === "string") {
+    try {
+      body = JSON.parse(req.body || "{}");
+    } catch (e) {
+      console.error("JSON parse error:", e);
+      body = {};
+    }
+  }
+
+  // 🔍 DEBUG: Print parsed body to verify real payload on Vercel
+  console.log("Parsed body:", body);
+
+  const { items, customerName } = body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
     return res
@@ -35,9 +49,6 @@ export default async function handler(req, res) {
 
   try {
     await client.query("BEGIN");
-
-    // ⭐ DEBUG LOG FOR VERCEL
-    console.log("DB connected OK on Vercel — transaction started");
 
     const orderResult = await client.query(
       "INSERT INTO orders (customer_name) VALUES ($1) RETURNING order_id",
@@ -56,6 +67,7 @@ export default async function handler(req, res) {
         throw new Error(`Invalid quantity for item ${line.itemId}`);
       }
 
+      // Deduct product stock
       const baseUpdate = await client.query(
         "UPDATE inventory SET quantity_on_hand = quantity_on_hand - $2 WHERE inventory_id = $1 AND quantity_on_hand >= $2 RETURNING quantity_on_hand",
         [baseInventoryId, quantity]
@@ -64,12 +76,14 @@ export default async function handler(req, res) {
         throw new Error(`Insufficient stock for product ${line.itemId}`);
       }
 
+      // Insert into order_items
       const itemResult = await client.query(
         "INSERT INTO order_items (order_id, inventory_id, quantity) VALUES ($1, $2, $3) RETURNING order_item_id",
         [orderId, baseInventoryId, quantity]
       );
       const orderItemId = itemResult.rows[0].order_item_id;
 
+      // Process toppings
       const toppingSelections =
         Array.isArray(line?.selections?.toppings)
           ? line.selections.toppings
