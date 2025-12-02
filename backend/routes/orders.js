@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       .json({ success: false, error: "Method not allowed" });
   }
 
-  // 🔥 FIX: Vercel does NOT auto-parse JSON bodies in serverless functions
+  // Vercel does NOT auto-parse JSON bodies for Node serverless functions
   let body = req.body;
   if (!body || typeof body === "string") {
     try {
@@ -34,15 +34,18 @@ export default async function handler(req, res) {
     }
   }
 
-  // 🔍 DEBUG: Print parsed body to verify real payload on Vercel
+  // Debug print
   console.log("Parsed body:", body);
 
-  const { items, customerName } = body || {};
+  // Support BOTH naming conventions
+  const items = body.items;
+  const customerName = body.customer_name || body.customerName || "Guest";
 
   if (!Array.isArray(items) || items.length === 0) {
-    return res
-      .status(400)
-      .json({ success: false, error: "No items provided to create order" });
+    return res.status(400).json({
+      success: false,
+      error: "No items provided to create order",
+    });
   }
 
   const client = await pool.connect();
@@ -50,9 +53,10 @@ export default async function handler(req, res) {
   try {
     await client.query("BEGIN");
 
+    // Insert order with guaranteed non-null customer_name
     const orderResult = await client.query(
-      "INSERT INTO orders (customerName) VALUES ($1) RETURNING order_id",
-      [customerName || "Guest"]
+      "INSERT INTO orders (customer_name) VALUES ($1) RETURNING order_id",
+      [customerName]
     );
     const orderId = orderResult.rows[0].order_id;
 
@@ -76,14 +80,14 @@ export default async function handler(req, res) {
         throw new Error(`Insufficient stock for product ${line.itemId}`);
       }
 
-      // Insert into order_items
+      // Insert item
       const itemResult = await client.query(
         "INSERT INTO order_items (order_id, inventory_id, quantity) VALUES ($1, $2, $3) RETURNING order_item_id",
         [orderId, baseInventoryId, quantity]
       );
       const orderItemId = itemResult.rows[0].order_item_id;
 
-      // Process toppings
+      // Toppings
       const toppingSelections =
         Array.isArray(line?.selections?.toppings)
           ? line.selections.toppings
