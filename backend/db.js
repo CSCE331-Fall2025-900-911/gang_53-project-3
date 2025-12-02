@@ -19,6 +19,7 @@ const pool = new Pool({
   keepAlive: true,
 
   ssl: {
+    require: true,
     rejectUnauthorized: false,
   },
 });
