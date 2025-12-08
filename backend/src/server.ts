@@ -34,6 +34,23 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
+// Basic topping map so we can decrement the correct inventory rows
+const TOPPING_MAP: Record<string, { id: number; name: string }> = {
+  tapioca: { id: 20, name: 'Tapioca Pearls' },
+  grass: { id: 21, name: 'Grass Jelly' },
+  red_bean: { id: 22, name: 'Red Bean' },
+  aloe: { id: 23, name: 'Aloe Vera' },
+  pudding: { id: 24, name: 'Pudding' },
+  oreo: { id: 25, name: 'Oreo Crumbs' },
+  cheese: { id: 26, name: 'Cheese Foam' },
+  rainbow: { id: 27, name: 'Rainbow Jelly' },
+};
+
+const extractInventoryId = (itemId?: string) => {
+  const match = /product-(\d+)/.exec(itemId ?? '');
+  return match ? Number(match[1]) : null;
+};
+
 // Create Express app
 const app: Application = express();
 const PORT = process.env.PORT || 5000;

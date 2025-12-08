@@ -1,11 +1,26 @@
 import { NextResponse } from 'next/server';
 
+// Prefer local backend in dev even if NEXT_PUBLIC_API_URL points to production
+const pickBackendUrl = (req: Request) => {
+  const host = req.headers.get('host') || '';
+  const isLocalHost =
+    host.includes('localhost') ||
+    host.startsWith('127.') ||
+    host.startsWith('10.') ||
+    host.startsWith('192.168.') ||
+    host.startsWith('100.64.');
+
+  if (process.env.NODE_ENV !== 'production' && isLocalHost) {
+    return (process.env.NEXT_PUBLIC_LOCAL_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+  }
+  return (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+};
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    
-    // Call the backend API to create the order
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+    const backendUrl = pickBackendUrl(req);
     const response = await fetch(`${backendUrl}/api/orders`, {
       method: 'POST',
       headers: {
