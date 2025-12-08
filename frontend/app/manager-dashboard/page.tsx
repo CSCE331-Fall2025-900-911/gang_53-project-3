@@ -28,6 +28,7 @@ export default function DashboardPage() {
                     // Clear any manager session data if needed
                     router.push("/");
                 }} className="btn">Logout</button> */}
+
             </footer>
         </div>
     );
