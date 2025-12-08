@@ -34,23 +34,6 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-// Basic topping map so we can decrement the correct inventory rows
-const TOPPING_MAP: Record<string, { id: number; name: string }> = {
-  tapioca: { id: 20, name: 'Tapioca Pearls' },
-  grass: { id: 21, name: 'Grass Jelly' },
-  red_bean: { id: 22, name: 'Red Bean' },
-  aloe: { id: 23, name: 'Aloe Vera' },
-  pudding: { id: 24, name: 'Pudding' },
-  oreo: { id: 25, name: 'Oreo Crumbs' },
-  cheese: { id: 26, name: 'Cheese Foam' },
-  rainbow: { id: 27, name: 'Rainbow Jelly' },
-};
-
-const extractInventoryId = (itemId?: string) => {
-  const match = /product-(\d+)/.exec(itemId ?? '');
-  return match ? Number(match[1]) : null;
-};
-
 // Create Express app
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -563,89 +546,12 @@ app.get('/api/orders', async (req: Request, res: Response) => {
 
 app.post('/api/orders', async (req: Request, res: Response) => {
   try {
-    const items = Array.isArray((req.body as any)?.items) ? (req.body as any).items : [];
-    const customerName =
-      (req.body as any)?.customer_name || (req.body as any)?.customerName || 'Guest';
-
-    if (!items.length) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'No items provided to create order' });
-    }
-
-    console.log('Creating order for', customerName, 'with', items.length, 'items');
-
-    const client = await pool.connect();
-
-    try {
-      await client.query('BEGIN');
-
-      const orderResult = await client.query(
-        'INSERT INTO orders (customer_name, order_date) VALUES ($1, NOW()) RETURNING order_id',
-        [customerName]
-      );
-      const orderId = orderResult.rows[0].order_id;
-
-      for (const line of items) {
-        const baseInventoryId = extractInventoryId(line?.itemId);
-        const quantity = Number(line?.quantity) || 0;
-
-        if (!baseInventoryId) {
-          throw new Error(`Invalid itemId: ${line?.itemId}`);
-        }
-        if (quantity < 1) {
-          throw new Error(`Invalid quantity for item ${line?.itemId}`);
-        }
-
-        // Decrement base product inventory
-        const baseUpdate = await client.query(
-          'UPDATE inventory SET quantity_on_hand = quantity_on_hand - $2 WHERE inventory_id = $1 AND quantity_on_hand >= $2 RETURNING quantity_on_hand',
-          [baseInventoryId, quantity]
-        );
-        if (baseUpdate.rowCount === 0) {
-          throw new Error(`Insufficient stock for product ${line?.itemId}`);
-        }
-
-        const itemResult = await client.query(
-          'INSERT INTO order_items (order_id, inventory_id, quantity) VALUES ($1, $2, $3) RETURNING order_item_id',
-          [orderId, baseInventoryId, quantity]
-        );
-        const orderItemId = itemResult.rows[0].order_item_id;
-
-        const toppingSelections = Array.isArray(line?.selections?.toppings)
-          ? line.selections.toppings
-          : [];
-
-        for (const topKey of toppingSelections) {
-          const topping = TOPPING_MAP[topKey];
-          if (!topping) continue;
-
-          const topUpdate = await client.query(
-            'UPDATE inventory SET quantity_on_hand = quantity_on_hand - $2 WHERE inventory_id = $1 AND quantity_on_hand >= $2 RETURNING quantity_on_hand',
-            [topping.id, quantity]
-          );
-          if (topUpdate.rowCount === 0) {
-            throw new Error(`Insufficient stock for topping ${topping.name}`);
-          }
-
-          await client.query(
-            'INSERT INTO order_item_toppings (order_item_id, inventory_id, quantity) VALUES ($1, $2, $3)',
-            [orderItemId, topping.id, quantity]
-          );
-        }
-      }
-
-      await client.query('COMMIT');
-      res.status(201).json({ success: true, orderId });
-    } catch (innerError) {
-      await client.query('ROLLBACK');
-      console.error('Order creation failed:', innerError);
-      const message =
-        innerError instanceof Error ? innerError.message : 'Failed to create order';
-      res.status(500).json({ success: false, error: message });
-    } finally {
-      client.release();
-    }
+    const { customer_name } = req.body;
+    const result = await pool.query(
+      `INSERT INTO orders (customer_name, order_date) VALUES ($1, NOW()) RETURNING *`,
+      [customer_name]
+    );
+    res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({ success: false, error: 'Failed to create order' });
