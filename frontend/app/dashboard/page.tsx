@@ -30,6 +30,7 @@ type Item = {
   imageUrl?: string;
   optionGroups: Group[];
   isSpecial?: boolean;
+  category: Category;
 };
 
 // Database product type
@@ -52,6 +53,74 @@ const DEFAULT_SIZE_OPTIONS: Group = {
     { id: 'm', name: 'Medium', priceDelta: 0.5 },
     { id: 'l', name: 'Large', priceDelta: 1.0 },
   ],
+};
+
+const DEFAULT_SUGAR_OPTIONS: Group = {
+  id: 'sugar',
+  name: 'Sugar Level',
+  type: 'single',
+  options: [
+    { id: '0', name: 'No Sugar' },
+    { id: '25', name: '25%' },
+    { id: '50', name: '50%' },
+    { id: '75', name: '75%' },
+    { id: '100', name: '100%' },
+  ],
+};
+
+const DEFAULT_ICE_OPTIONS: Group = {
+  id: 'ice',
+  name: 'Ice Level',
+  type: 'single',
+  options: [
+    { id: 'none', name: 'No Ice' },
+    { id: 'less', name: 'Less Ice' },
+    { id: 'normal', name: 'Regular Ice' },
+  ],
+};
+
+const DEFAULT_TEMP_OPTIONS: Group = {
+  id: 'temp',
+  name: 'Temperature',
+  type: 'single',
+  options: [
+    { id: 'cold', name: 'Cold' },
+    { id: 'warm', name: 'Warm' },
+  ],
+};
+
+const CATEGORY_OPTIONS = ['All', 'Teas', 'Milk Teas', 'Smoothies', 'Coffees', 'Fruit Drinks'] as const;
+type Category = (typeof CATEGORY_OPTIONS)[number];
+
+const categorizeProduct = (name: string): Category => {
+  const n = name.toLowerCase();
+  const has = (kw: string | RegExp) => (typeof kw === 'string' ? n.includes(kw) : kw.test(n));
+
+  if (has('coffee') || has('espresso') || has('americano') || has('latte')) return 'Coffees';
+  if (has('smoothie') || has('slush') || has('icee') || has('frappe')) return 'Smoothies';
+  if (has('milk tea') || has('milk') || has('latte')) return 'Milk Teas';
+
+  const fruitKeywords = [
+    'mango',
+    'strawberry',
+    'lychee',
+    'passion',
+    'peach',
+    'grape',
+    'pineapple',
+    'kiwi',
+    'berry',
+    'watermelon',
+    'melon',
+    'honeydew',
+    'coconut',
+    'lemon',
+    'lime',
+    'orange',
+  ];
+  if (fruitKeywords.some((f) => has(f))) return 'Fruit Drinks';
+  if (has('tea') || has('oolong') || has('matcha') || has('green')) return 'Teas';
+  return 'All';
 };
 
 const DEFAULT_TOPPING_OPTIONS: Group = {
@@ -103,8 +172,15 @@ const convertToMenuItem = (product: DbProduct): Item => ({
   basePrice: Number(product.price),
   description: 'Delicious bubble tea drink',
   imageUrl: getProductImage(product.name),
-  optionGroups: [DEFAULT_SIZE_OPTIONS, DEFAULT_TOPPING_OPTIONS],
+  optionGroups: [
+    DEFAULT_SIZE_OPTIONS,
+    DEFAULT_SUGAR_OPTIONS,
+    DEFAULT_ICE_OPTIONS,
+    DEFAULT_TEMP_OPTIONS,
+    DEFAULT_TOPPING_OPTIONS,
+  ],
   isSpecial: product.seasonal?.toLowerCase() === 'y',
+  category: categorizeProduct(product.name),
 });
 
 // ----- helper to compute a stable line id from selections -----
@@ -124,6 +200,7 @@ export default function OldDesignMenuPage() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [highContrast, setHighContrast] = useState(false);
   const [menu, setMenu] = useState<Item[]>([]);
+  const [activeCategory, setActiveCategory] = useState<Category>('All');
   const [menuLoading, setMenuLoading] = useState(true);
   const [menuError, setMenuError] = useState<string | null>(null);
 
@@ -345,50 +422,75 @@ export default function OldDesignMenuPage() {
         )}
         
         {!menuLoading && !menuError && menu.length > 0 && (
-          <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {menu.map((item: Item) => (
-              <article
-                key={item.id}
-                className={`overflow-hidden rounded-3xl border ${
-                  item.isSpecial 
-                    ? 'border-yellow-500 bg-yellow-900/20 shadow-lg shadow-yellow-500/20' 
-                    : 'border-zinc-800 bg-zinc-900/50'
-                }`}
-              >
-                <div className="h- w-full bg-zinc-800/50 relative overflow-hidden">
-                  {item.imageUrl ? (
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-zinc-800/50" />
-                  )}
-                  {item.isSpecial && (
-                    <div className="absolute top-2 right-2 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold">
-                      ⭐ SPECIAL
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-[220px,1fr]">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 h-fit">
+              <h3 className="mb-3 text-sm uppercase tracking-wide text-zinc-400">Categories</h3>
+              <div className="flex flex-col gap-2">
+                {CATEGORY_OPTIONS.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`rounded-lg px-3 py-2 text-left text-sm font-semibold transition-all border ${
+                      activeCategory === cat
+                        ? 'border-teal-600 bg-teal-800/50 text-white'
+                        : 'border-zinc-800 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-900'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {menu
+                .filter((item) => activeCategory === 'All' || item.category === activeCategory)
+                .map((item: Item) => (
+                  <article
+                    key={item.id}
+                    className={`overflow-hidden rounded-3xl border ${
+                      item.isSpecial 
+                        ? 'border-yellow-500 bg-yellow-900/20 shadow-lg shadow-yellow-500/20' 
+                        : 'border-zinc-800 bg-zinc-900/50'
+                    }`}
+                  >
+                    <div className="h- w-full bg-zinc-800/50 relative overflow-hidden">
+                      {item.imageUrl ? (
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-zinc-800/50" />
+                      )}
+                      {item.isSpecial && (
+                        <div className="absolute top-2 right-2 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold">
+                          SPECIAL
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="space-y-2 p-5">
-                  <h3 className="text-lg font-semibold">{item.name}</h3>
-                  <p className="text-sm text-zinc-400 line-clamp-2">{item.description}</p>
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="font-semibold">${item.basePrice.toFixed(2)}</span>
-                    <button
-                      onClick={() => setActive(item)}
-                      className="rounded-xl border border-teal-700 bg-teal-800/70 px-4 py-2 text-sm font-semibold transition-all hover:bg-teal-700/70"
-                    >
-                      Customize
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
+                    <div className="space-y-2 p-5">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">{item.name}</h3>
+                        <span className="text-xs text-zinc-400">{item.category}</span>
+                      </div>
+                      <p className="text-sm text-zinc-400 line-clamp-2">{item.description}</p>
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="font-semibold">${item.basePrice.toFixed(2)}</span>
+                        <button
+                          onClick={() => setActive(item)}
+                          className="rounded-xl border border-teal-700 bg-teal-800/70 px-4 py-2 text-sm font-semibold transition-all hover:bg-teal-700/70"
+                        >
+                          Customize
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+            </div>
           </section>
         )}
-
         {/* Summary + Go to Cart (bottom-right) */}
         <div className="mt-10 flex items-center justify-end gap-4">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-5 py-3 text-lg font-semibold">
@@ -473,6 +575,20 @@ function CustomizeModal({
 
   useEffect(() => {
     setMounted(true);
+    // Set sensible defaults for single-select groups if none chosen yet
+    setSelections((prev) => {
+      const next = { ...prev };
+      const ensureDefault = (groupId: string, defaultId: string) => {
+        if (!next[groupId] || next[groupId].length === 0) {
+          next[groupId] = [defaultId];
+        }
+      };
+      ensureDefault('size', 's');
+      ensureDefault('sugar', '100');
+      ensureDefault('ice', 'normal');
+      ensureDefault('temp', 'cold');
+      return next;
+    });
   }, []);
 
   if (!mounted) return null;
@@ -550,3 +666,6 @@ function CustomizeModal({
     document.body
   );
 }
+
+
+
