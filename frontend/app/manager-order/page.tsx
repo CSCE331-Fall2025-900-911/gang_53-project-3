@@ -40,7 +40,7 @@ const SIZES = [
 
 const ICE_LEVELS = ['0% Ice', '25% Ice', '50% Ice', '75% Ice', '100% Ice'];
 
-const SUGAR_LEVELS = ['0%', '25%', '50%', '75%', '100%', 'More'];
+const SUGAR_LEVELS = ['0%', '25%', '50%', '75%', '100%', '125%'];
 
 const TEMPERATURES = ['Hot', 'Cold'];
 
