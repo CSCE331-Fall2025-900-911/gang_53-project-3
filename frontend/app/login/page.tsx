@@ -1,6 +1,7 @@
 "use client";
+
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
-import { Suspense, useState } from "react";
 
 const googleAuthUrl =
   process.env.NODE_ENV === "production"
@@ -40,10 +41,7 @@ function LoginContent() {
         return;
       }
 
-      // Store user info in localStorage or session
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      // Redirect to dashboard
       window.location.href = "/dashboard";
     } catch (err) {
       setError("Connection error. Please try again.");
@@ -77,8 +75,7 @@ function LoginContent() {
             </span>
           </div>
           <p className="text-sm text-zinc-200/80">
-            Sync orders and rewards across visits. We will keep you signed in for
-            a smooth checkout.
+            Sync orders and rewards across visits. We will keep you signed in for a smooth checkout.
           </p>
 
           <a
@@ -102,28 +99,28 @@ function LoginContent() {
               Secure
             </span>
           </div>
+
           <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-              />
-            </div>
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            />
+
             {error && <p className="text-sm text-red-400">{error}</p>}
+
             <button
               type="submit"
               disabled={loading}
@@ -148,10 +145,11 @@ function LoginContent() {
             Fast
           </span>
         </div>
+
         <p className="text-sm text-zinc-300/80">
-          Jump straight into the menu. You can always log in later if you change
-          your mind.
+          Jump straight into the menu. You can always log in later if you change your mind.
         </p>
+
         <Link
           href="/dashboard"
           className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-zinc-900"
@@ -167,9 +165,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-dvh bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-zinc-100">
       <div className="mx-auto max-w-4xl px-6 py-10 md:py-16">
-        <Suspense
-          fallback={<div className="text-center py-10">Loading...</div>}
-        >
+        <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
           <LoginContent />
         </Suspense>
       </div>
