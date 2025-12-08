@@ -882,6 +882,38 @@ app.post('/api/login', async (req: Request, res: Response) => {
   }
 });
 
+// Employee Login Endpoint
+app.post('/api/employees/login', async (req: Request, res: Response) => {
+  const { username, password } = req.body;
+  console.log('🔑 Employee login attempt for username:', username);
+
+  try {
+    // Query the database for the employee
+    const result = await pool.query(
+      'SELECT employee_id, name, role, username FROM employees WHERE username = $1 AND password = $2',
+      [username, password]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(401).json({ success: false, error: 'Invalid username or password' });
+    }
+
+    const employee = result.rows[0];
+
+    // Create a session for the employee
+    (req.session as any).employee = employee;
+    
+    res.json({ 
+      success: true, 
+      message: 'Login successful', 
+      data: employee
+    });
+  } catch (error) {
+    console.error('Error during employee login:', error);
+    res.status(500).json({ success: false, error: 'Failed to login' });
+  }
+});
+
 
 // 404 handler (must be after all route definitions)
 app.use((req: Request, res: Response) => {
