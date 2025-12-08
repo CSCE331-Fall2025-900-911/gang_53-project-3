@@ -54,6 +54,40 @@ const DEFAULT_SIZE_OPTIONS: Group = {
   ],
 };
 
+const DEFAULT_SUGAR_OPTIONS: Group = {
+  id: 'sugar',
+  name: 'Sugar Level',
+  type: 'single',
+  options: [
+    { id: '0', name: 'No Sugar' },
+    { id: '25', name: '25%' },
+    { id: '50', name: '50%' },
+    { id: '75', name: '75%' },
+    { id: '100', name: '100%' },
+  ],
+};
+
+const DEFAULT_ICE_OPTIONS: Group = {
+  id: 'ice',
+  name: 'Ice Level',
+  type: 'single',
+  options: [
+    { id: 'none', name: 'No Ice' },
+    { id: 'less', name: 'Less Ice' },
+    { id: 'normal', name: 'Regular Ice' },
+  ],
+};
+
+const DEFAULT_TEMP_OPTIONS: Group = {
+  id: 'temp',
+  name: 'Temperature',
+  type: 'single',
+  options: [
+    { id: 'cold', name: 'Cold' },
+    { id: 'warm', name: 'Warm' },
+  ],
+};
+
 const DEFAULT_TOPPING_OPTIONS: Group = {
   id: 'toppings',
   name: 'Toppings',
@@ -103,7 +137,13 @@ const convertToMenuItem = (product: DbProduct): Item => ({
   basePrice: Number(product.price),
   description: 'Delicious bubble tea drink',
   imageUrl: getProductImage(product.name),
-  optionGroups: [DEFAULT_SIZE_OPTIONS, DEFAULT_TOPPING_OPTIONS],
+  optionGroups: [
+    DEFAULT_SIZE_OPTIONS,
+    DEFAULT_SUGAR_OPTIONS,
+    DEFAULT_ICE_OPTIONS,
+    DEFAULT_TEMP_OPTIONS,
+    DEFAULT_TOPPING_OPTIONS,
+  ],
   isSpecial: product.seasonal?.toLowerCase() === 'y',
 });
 
@@ -473,6 +513,20 @@ function CustomizeModal({
 
   useEffect(() => {
     setMounted(true);
+    // Set sensible defaults for single-select groups if none chosen yet
+    setSelections((prev) => {
+      const next = { ...prev };
+      const ensureDefault = (groupId: string, defaultId: string) => {
+        if (!next[groupId] || next[groupId].length === 0) {
+          next[groupId] = [defaultId];
+        }
+      };
+      ensureDefault('size', 's');
+      ensureDefault('sugar', '100');
+      ensureDefault('ice', 'normal');
+      ensureDefault('temp', 'cold');
+      return next;
+    });
   }, []);
 
   if (!mounted) return null;

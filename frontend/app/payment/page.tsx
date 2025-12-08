@@ -43,9 +43,44 @@ export default function PaymentPage() {
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Map selection ids to human-friendly labels for summary display
+  const SELECTION_LABELS: Record<string, Record<string, string>> = {
+    size: { s: "Small", m: "Medium", l: "Large" },
+    sugar: { "0": "No Sugar", "25": "25%", "50": "50%", "75": "75%", "100": "100%" },
+    ice: { none: "No Ice", less: "Less Ice", normal: "Regular Ice" },
+    temp: { cold: "Cold", warm: "Warm" },
+    toppings: {
+      tapioca: "Tapioca Pearls",
+      grass: "Grass Jelly",
+      red_bean: "Red Bean",
+      aloe: "Aloe Vera",
+      pudding: "Pudding",
+      oreo: "Oreo Crumbs",
+      cheese: "Cheese Foam",
+      rainbow: "Rainbow Jelly",
+    },
+  };
+
+  const ORDERED_GROUPS: Array<{ id: string; label: string }> = [
+    { id: "size", label: "Size" },
+    { id: "sugar", label: "Sugar" },
+    { id: "ice", label: "Ice" },
+    { id: "temp", label: "Temp" },
+    { id: "toppings", label: "Toppings" },
+  ];
+
   const formatSelections = (selections: Record<string, string[]>) => {
-    const labels = Object.values(selections ?? {}).flat();
-    return labels.length ? labels.join(", ") : "No customizations";
+    const parts: string[] = [];
+    for (const group of ORDERED_GROUPS) {
+      const choices = selections?.[group.id] ?? [];
+      if (!choices.length) continue;
+      const labels =
+        choices
+          .map((c) => SELECTION_LABELS[group.id]?.[c] || c)
+          .join(", ");
+      parts.push(`${group.label}: ${labels}`);
+    }
+    return parts.length ? parts.join(" • ") : "No customizations";
   };
 
   const clearSubmissionFlag = () => {
