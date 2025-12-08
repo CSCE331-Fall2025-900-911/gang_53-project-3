@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useCart, type CartItem } from '@/lib/cart';
@@ -212,6 +212,18 @@ export default function OldDesignMenuPage() {
     setBackendURL(url.replace(/\/$/, ''));
   }, []);
 
+  const handleLogout = useCallback(async () => {
+    try {
+      if (backendURL) {
+        await fetch(`${backendURL}/auth/logout`, { credentials: 'include' });
+      }
+    } catch {
+      // ignore errors, just proceed to landing
+    } finally {
+      window.location.href = '/';
+    }
+  }, [backendURL]);
+
   // Fetch user and weather data
   useEffect(() => {
     if (!backendURL) return;
@@ -369,9 +381,7 @@ export default function OldDesignMenuPage() {
             <div className="flex flex-col items-start gap-3 md:items-end">
               {backendURL && user && (
                 <button
-                  onClick={() => {
-                    window.location.href = `${backendURL}/auth/logout`;
-                  }}
+                  onClick={handleLogout}
                   className="rounded-lg border border-red-700 bg-red-900/40 px-4 py-2 text-sm font-medium hover:bg-red-900/60"
                 >
                   Logout
