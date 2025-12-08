@@ -20,11 +20,12 @@ export default function EmployeeLoginPage() {
         ? 'http://localhost:5000'
         : (process.env.NEXT_PUBLIC_API_URL || 'https://gang53-project-3-backend.vercel.app');
       
-      const response = await fetch(`${apiUrl}/api/employees/login`, {
+      const response = await fetch(`${apiUrl.replace(/\/$/, '')}/api/employees/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           username,
           password
