@@ -1,73 +1,160 @@
+/* Manager Actions (Ordering Trends) */
+
+* {
+  box-sizing: border-box;
+}
+
 .manager-page {
-  font-family: Arial, sans-serif;
-  background-color: #f7f7f7;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #0f3460;
   padding: 20px;
-  color: black;
+  color: #fff;
+  min-height: 100vh;
 }
 
 header {
-  background-color: #1976d2;
+  background: rgba(255, 255, 255, 0.05);
   color: white;
-  padding: 15px;
+  padding: 25px;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
-  border-radius: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  margin-bottom: 30px;
 }
 
-header h1 { margin: 0; font-size: 1.8rem; text-align: center; }
+header h1 {
+  margin: 0;
+  font-size: 2.2rem;
+  color: #00d4ff;
+}
+
 .back-btn {
-  position: absolute; left: 20px;
-  background: linear-gradient(#f5f5f5,#e0e0e0);
-  border: 1px solid #ccc; border-radius: 5px;
-  padding: 6px 12px; cursor: pointer;
-  color: black;
+  position: absolute;
+  left: 20px;
+  background: #00d4ff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  color: #0f3460;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background: #00f5ff;
+  transform: translateY(-2px);
 }
 
 section {
-  background: white; margin-top: 20px;
-  border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1);
-  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-top: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  padding: 20px;
 }
 
-h2 { margin-top: 0; text-align: center; }
+h2 {
+  margin-top: 0;
+  text-align: center;
+  color: #00d4ff;
+  font-size: 1.5rem;
+}
 
 .table-container {
   margin-top: 10px;
   overflow-x: auto;
+  border-radius: 8px;
 }
 
 table {
-  width: 100%; border-collapse: collapse; text-align: center;
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
 }
 
-th, td { padding: 8px 12px; border-bottom: 1px solid #ddd; }
-th { background: #f0f0f0; }
+th,
+td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  color: #fff;
+}
+
+th {
+  background: rgba(0, 212, 255, 0.1);
+  font-weight: 600;
+  color: #00d4ff;
+}
+
+tr:hover {
+  background: rgba(0, 212, 255, 0.05);
+}
+
+tr.selected {
+  background: rgba(0, 212, 255, 0.2) !important;
+  color: #fff;
+}
 
 td input {
   width: 100%;
-  padding: 4px 6px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  padding: 8px;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
   font-size: 14px;
-  font-family: Arial, sans-serif;
+  font-family: inherit;
+}
+
+td input:focus {
+  outline: none;
+  border-color: #00d4ff;
 }
 
 .button-row {
-  display: flex; justify-content: center; gap: 10px; margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
 }
 
 button {
-  padding: 8px 16px;
-  background: linear-gradient(#f5f5f5,#e0e0e0);
-  border: 1px solid #ccc; border-radius: 5px; cursor: pointer;
+  padding: 10px 20px;
+  background: #00d4ff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #0f3460;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 button:hover {
-  background: linear-gradient(#e0e0e0,#d0d0d0);
+  background: #00f5ff;
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .report-section .center-btn {
-  display: block; margin: 0 auto 10px auto;
+  display: block;
+  margin: 0 auto 10px auto;
+}
+
+@media (max-width: 768px) {
+  .button-row {
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+  }
 }

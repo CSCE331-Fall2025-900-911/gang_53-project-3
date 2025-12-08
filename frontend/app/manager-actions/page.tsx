@@ -241,7 +241,6 @@ export default function ManagerPage() {
                   onClick={() => setSelectedEmployeeId(e.employee_id)}
                   className={selectedEmployeeId === e.employee_id ? "selected" : ""}
                   style={{
-                    backgroundColor: selectedEmployeeId === e.employee_id ? "#e3f2fd" : "transparent",
                     cursor: "pointer"
                   }}
                 >

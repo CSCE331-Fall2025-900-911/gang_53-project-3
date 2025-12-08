@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "./styles.css";
-import BackButton from "@/components/BackButton";
 
 interface Employee {
   employee_id: number;
@@ -44,34 +43,54 @@ export default function DashboardPage() {
 
     if (loading) {
       return (
-        <div className="dashboard">
+        <div className="dashboard-container">
           <div style={{ textAlign: 'center', padding: '40px' }}>
-            <h2>Loading...</h2>
+            <p className="dashboard-loading">Loading...</p>
           </div>
         </div>
       );
     }
 
     return (
-        <div className="dashboard">
+        <div className="dashboard-container">
             <header className="dashboard-header">
-                <h1>Bobalicious-53</h1>
-                <div className="account-info">
-                    <p>Currently logged in as: <strong>{employee?.name || 'Unknown'}</strong></p>
-                    <p>Account type: <strong>{employee?.role || 'Unknown'}</strong></p>
+                <div className="header-left">
+                    <h1 className="dashboard-title">Bobalicious Manager</h1>
+                    <div className="account-info">
+                        <p>Welcome, <strong>{employee?.name || 'Unknown'}</strong></p>
+                        <p className="role-badge">{employee?.role || 'Unknown'}</p>
+                    </div>
                 </div>
-                <BackButton/>   
+                <button onClick={handleLogout} className="logout-btn">Logout</button>
             </header>
 
             <main className="dashboard-main">
-                <button onClick={() => router.push("/manager-order")} className="btn">Manager Order</button>
-                <button onClick={() => router.push("/inventory")} className="btn">Inventory</button>
-                <button onClick={() => router.push("/manager-actions")} className="btn">Ordering Trends</button>
+                <div className="dashboard-grid">
+                    <button 
+                        onClick={() => router.push("/manager-order")} 
+                        className="dashboard-card"
+                    >
+                        <div className="card-title">Manager Order</div>
+                        <div className="card-description">Create and manage orders</div>
+                    </button>
+                    
+                    <button 
+                        onClick={() => router.push("/inventory")} 
+                        className="dashboard-card"
+                    >
+                        <div className="card-title">Inventory</div>
+                        <div className="card-description">Manage stock levels</div>
+                    </button>
+                    
+                    <button 
+                        onClick={() => router.push("/manager-actions")} 
+                        className="dashboard-card"
+                    >
+                        <div className="card-title">Ordering Trends</div>
+                        <div className="card-description">View sales reports</div>
+                    </button>
+                </div>
             </main>
-
-            <footer className="dashboard-footer">
-                <button onClick={handleLogout} className="btn logout-btn">Logout</button>
-            </footer>
         </div>
     );
 }

@@ -54,7 +54,8 @@ export function ProductAIChat() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to get response: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -69,10 +70,11 @@ export function ProductAIChat() {
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
+      const errorContent = error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.';
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: errorContent,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);

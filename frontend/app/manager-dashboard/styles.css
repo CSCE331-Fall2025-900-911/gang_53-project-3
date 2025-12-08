@@ -1,75 +1,143 @@
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #f6f6f6;
+/* Manager Dashboard Styles */
+
+* {
+  box-sizing: border-box;
 }
 
-.dashboard {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+.dashboard-container {
+  min-height: 100vh;
+  background-color: #0f3460;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
 }
 
-/* Header bar */
 .dashboard-header {
-    background-color: #1976d2;
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 45px 40px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.2);
 }
 
-.dashboard-header h1 {
-    font-size: 2.5rem;
-    margin: 0;
+.header-left {
+  flex: 1;
+}
+
+.dashboard-title {
+  font-size: 2.5rem;
+  margin: 0 0 15px 0;
+  color: #00d4ff;
 }
 
 .account-info p {
-    margin: 2px 0;
-    font-size: 1.5rem;
+  margin: 5px 0;
+  font-size: 1rem;
+  color: #fff;
 }
 
-/* Center content */
-.dashboard-main {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 80px;
-}
-
-/* Buttons */
-.btn {
-    padding: 15px 30px;
-    font-size: 2rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    cursor: pointer;
-    background: linear-gradient(#f5f5f5, #e0e0e0);
-    transition: all 0.2s ease;
-    color: black;
-}
-
-.btn:hover {
-    background: linear-gradient(#e0e0e0, #cfcfcf);
-}
-
-/* Footer */
-.dashboard-footer {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-    margin-bottom: 60px;
+.role-badge {
+  display: inline-block;
+  background: rgba(0, 212, 255, 0.2);
+  border: 1px solid rgba(0, 212, 255, 0.5);
+  color: #00d4ff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  margin-top: 5px;
 }
 
 .logout-btn {
-    background: linear-gradient(#ff6b6b, #ff5252);
-    color: white;
-    border-color: #ff5252;
+  padding: 10px 20px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
 }
 
 .logout-btn:hover {
-    background: linear-gradient(#ff5252, #ff3b3b);
+  background: #ff5252;
+  transform: translateY(-2px);
+}
+
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  max-width: 1000px;
+  width: 100%;
+}
+
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 40px 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(0, 212, 255, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+  font-family: inherit;
+  text-align: center;
+}
+
+.dashboard-card:hover {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: #00d4ff;
+  transform: translateY(-5px);
+}
+
+.card-icon {
+  font-size: 3rem;
+}
+
+.card-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #00d4ff;
+}
+
+.card-description {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dashboard-loading {
+  font-size: 1.2rem;
+  color: #00d4ff;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .dashboard-title {
+    font-size: 1.8rem;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
