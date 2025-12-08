@@ -5,6 +5,7 @@ import usageRouter from "./routes/usage.js";
 import employeesRouter from "./routes/employees.js";
 import reportsRouter from "./routes/reports.js";
 import ordersRouter from "./routes/orders.js";
+import loginRouter from "./routes/login.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -19,6 +20,7 @@ app.use("/api/usage", usageRouter);
 app.use("/api/employees", employeesRouter);
 app.use("/api/reports", reportsRouter);
 app.use("/api/orders", ordersRouter);
+app.use("/api/login", loginRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
