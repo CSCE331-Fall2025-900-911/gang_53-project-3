@@ -14,12 +14,12 @@ const apiUrl =
     : "http://localhost:8080";
 
 function LoginContent() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -41,7 +41,10 @@ function LoginContent() {
         return;
       }
 
+      // Save user locally
       localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirect
       window.location.href = "/dashboard";
     } catch (err) {
       setError("Connection error. Please try again.");
@@ -105,7 +108,9 @@ function LoginContent() {
               type="text"
               placeholder="Username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setUsername(e.target.value)
+              }
               required
               className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             />
@@ -114,7 +119,9 @@ function LoginContent() {
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPassword(e.target.value)
+              }
               required
               className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             />
@@ -132,7 +139,7 @@ function LoginContent() {
         </div>
       </section>
 
-      {/* Guest Option */}
+      {/* Guest Mode */}
       <section className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 shadow-lg shadow-black/20">
         <div className="mb-4 flex items-center justify-between">
           <div>
