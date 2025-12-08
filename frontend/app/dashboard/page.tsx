@@ -259,7 +259,7 @@ export default function OldDesignMenuPage() {
     const fetchWeather = async () => {
       const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
       const city = 'College Station'; 
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=imperial&appid=${apiKey}`;
 
       try {
         const response = await fetch(url);
@@ -362,7 +362,7 @@ export default function OldDesignMenuPage() {
               )}
               {weather && (
                 <div className="text-sm text-zinc-300">
-                  🌤️ {weather.city}: {weather.temperature}°C, {weather.description}
+                  🌤️ {weather.city}: {weather.temperature}°F, {weather.description}
                 </div>
               )}
             </div>
