@@ -147,9 +147,10 @@ export default function ManagerOrderPage() {
         if (!selectedDrink) return;
         
         const isTea = drinkType === 'tea';
+        const baseDrinkPrice = Number(selectedDrink.price) || 0;
         const selectedSizeObj = SIZES.find(s => s.id === selectedSize);
         const sizePriceDelta = selectedSizeObj?.priceDelta || 0;
-        const finalPrice = selectedDrink.price + sizePriceDelta;
+        const finalPrice = baseDrinkPrice + sizePriceDelta;
 
         const baseProps = {
             id: selectedDrink.inventory_id,
@@ -208,17 +209,18 @@ export default function ManagerOrderPage() {
 
     const total = cart.reduce((sum, item) => {
         const basePrice = Number(item.price) || 0;
-        const toppingPrice = item.toppings.reduce((tSum, topping) => tSum + (topping.price || 0), 0);
+        const toppingPrice = item.toppings.reduce((tSum, topping) => tSum + Number(topping.price || 0), 0);
         return sum + (basePrice + toppingPrice) * item.quantity;
     }, 0);
 
     // Calculate current modal price based on selections
     const getModalPrice = () => {
         if (!selectedDrink) return 0;
+        const baseDrinkPrice = Number(selectedDrink.price) || 0;
         const selectedSizeObj = SIZES.find(s => s.id === selectedSize);
         const sizePriceDelta = selectedSizeObj?.priceDelta || 0;
-        const basePriceWithSize = selectedDrink.price + sizePriceDelta;
-        const toppingPrice = selectedToppings.reduce((sum, t) => sum + t.price, 0);
+        const basePriceWithSize = baseDrinkPrice + sizePriceDelta;
+        const toppingPrice = selectedToppings.reduce((sum, t) => sum + Number(t.price || 0), 0);
         return basePriceWithSize + toppingPrice;
     };
 
@@ -306,7 +308,7 @@ export default function ManagerOrderPage() {
                                                 <span>{item.quantity}</span>
                                                 <button onClick={() => updateQuantity(item, item.quantity + 1)}>+</button>
                                             </div>
-                                            <p className="cart-item-price">${((item.price + item.toppings.reduce((sum, t) => sum + t.price, 0)) * item.quantity).toFixed(2)}</p>
+                                            <p className="cart-item-price">${((Number(item.price) + item.toppings.reduce((sum, t) => sum + Number(t.price || 0), 0)) * item.quantity).toFixed(2)}</p>
                                         </div>
                                     ))}
                                 </div>
