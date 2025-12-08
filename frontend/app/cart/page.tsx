@@ -3,8 +3,24 @@
 import Link from 'next/link';
 import { useCart } from '@/lib/cart';
 
+// Helper function to get emoji for a product
+const getDrinkEmoji = (productName: string): string => {
+  const n = productName.toLowerCase();
+  
+  if (n.includes('coffee') || n.includes('espresso') || n.includes('latte')) return '☕';
+  if (n.includes('smoothie') || n.includes('slush')) return '🥤';
+  if (n.includes('matcha')) return '🍵';
+  if (n.includes('milk tea') || n.includes('milk')) return '🥛';
+  if (n.includes('tea')) return '🍶';
+  if (n.includes('fruit') || n.includes('mango') || n.includes('strawberry') || n.includes('lychee')) return '🍓';
+  if (n.includes('chocolate')) return '🍫';
+  if (n.includes('honey')) return '🍯';
+  
+  return '🥤'; // Default emoji
+};
+
 export default function CartPage() {
-  const { items, remove, subtotal } = useCart();
+  const { items, remove, subtotal, updateQuantity } = useCart();
 
   return (
     <main className="min-h-dvh bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-zinc-100">
@@ -37,16 +53,8 @@ export default function CartPage() {
               >
                 <div className="flex items-center gap-4">
                   {/* thumbnail */}
-                  <div className="h-16 w-16 rounded-xl bg-zinc-800/70 overflow-hidden flex-shrink-0">
-                    {l.imageUrl ? (
-                      <img 
-                        src={l.imageUrl} 
-                        alt={l.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-zinc-800/70" />
-                    )}
+                  <div className="h-16 w-16 rounded-xl bg-zinc-800/70 overflow-hidden flex-shrink-0 flex items-center justify-center text-3xl">
+                    {getDrinkEmoji(l.name)}
                   </div>
                   <div>
                     <h3 className="font-semibold">{l.name}</h3>
@@ -67,15 +75,15 @@ export default function CartPage() {
                   {/* Quantity control */}
                   <div className="flex items-center rounded-xl border border-zinc-700">
                     <button
-                      disabled
-                      className="px-3 py-2 opacity-50 cursor-not-allowed"
+                      onClick={() => updateQuantity(l.id, l.quantity - 1)}
+                      className="px-3 py-2 hover:bg-zinc-800"
                     >
                       −
                     </button>
                     <span className="px-3">{l.quantity}</span>
                     <button
-                      disabled
-                      className="px-3 py-2 opacity-50 cursor-not-allowed"
+                      onClick={() => updateQuantity(l.id, l.quantity + 1)}
+                      className="px-3 py-2 hover:bg-zinc-800"
                     >
                       +
                     </button>

@@ -60,11 +60,11 @@ const DEFAULT_SUGAR_OPTIONS: Group = {
   name: 'Sugar Level',
   type: 'single',
   options: [
-    { id: '0', name: 'No Sugar' },
-    { id: '25', name: '25%' },
-    { id: '50', name: '50%' },
-    { id: '75', name: '75%' },
-    { id: '100', name: '100%' },
+    { id: '0', name: 'No Sugar', priceDelta: 0 },
+    { id: '25', name: '25%', priceDelta: 0 },
+    { id: '50', name: '50%', priceDelta: 0 },
+    { id: '75', name: '75%', priceDelta: 0 },
+    { id: '100', name: '100%', priceDelta: 0 },
   ],
 };
 
@@ -73,9 +73,9 @@ const DEFAULT_ICE_OPTIONS: Group = {
   name: 'Ice Level',
   type: 'single',
   options: [
-    { id: 'none', name: 'No Ice' },
-    { id: 'less', name: 'Less Ice' },
-    { id: 'normal', name: 'Regular Ice' },
+    { id: 'none', name: 'No Ice', priceDelta: 0 },
+    { id: 'less', name: 'Less Ice', priceDelta: 0 },
+    { id: 'normal', name: 'Regular Ice', priceDelta: 0 },
   ],
 };
 
@@ -84,8 +84,8 @@ const DEFAULT_TEMP_OPTIONS: Group = {
   name: 'Temperature',
   type: 'single',
   options: [
-    { id: 'cold', name: 'Cold' },
-    { id: 'warm', name: 'Warm' },
+    { id: 'cold', name: 'Cold', priceDelta: 0 },
+    { id: 'warm', name: 'Warm', priceDelta: 0 },
   ],
 };
 
@@ -139,30 +139,20 @@ const DEFAULT_TOPPING_OPTIONS: Group = {
   ],
 };
 
-// Helper function to get image path for a product
-const getProductImage = (productName: string): string => {
-  const normalizedName = productName.toLowerCase().replace(/\s+/g, '_');
-  const imageMap: Record<string, string> = {
-    'classic_milk_tea': '/pics/classic_milk_tea.png',
-    'matcha_latte': '/pics/matcha_latte.png',
-    'taro_milk_tea': '/pics/taro_milk_tea.png',
-    'thai_tea': '/pics/thai_tea.png',
-    'brown_sugar_milk_tea': '/pics/brown_sugar_milk_tea.png',
-    'oolong_milk_tea': '/pics/oolong_milk_tea.png',
-    'coconut_milk_tea': '/pics/coconut_milk_tea.png',
-    'passionfruit_green_tea': '/pics/passionfruit_green_tea.png',
-    'lychee_green_tea': '/pics/lychee_green_tea.png',
-    'rose_milk_tea': '/pics/rose_milk_tea.png',
-    'coffee_milk_tea': '/pics/coffee_milk_tea.png',
-    'chocolate_milk_tea': '/pics/chocolate_milk_tea.png',
-    'mango_milk_tea': '/pics/mango_milk_tea.png',
-    'strawberry_milk_tea': '/pics/strawberry_milk_tea.png',
-    'honeydew_milk_tea': '/pics/honeydew_milk_tea.png',
-    'jasmine_green_milk_tea': '/pics/jasmine_green_milk_tea.png'
-
-  };
+// Helper function to get emoji for a product
+const getDrinkEmoji = (productName: string): string => {
+  const n = productName.toLowerCase();
   
-  return imageMap[normalizedName] || '';
+  if (n.includes('coffee') || n.includes('espresso') || n.includes('latte')) return '☕';
+  if (n.includes('smoothie') || n.includes('slush')) return '🥤';
+  if (n.includes('matcha')) return '🍵';
+  if (n.includes('milk tea') || n.includes('milk')) return '🥛';
+  if (n.includes('tea')) return '🍶';
+  if (n.includes('fruit') || n.includes('mango') || n.includes('strawberry') || n.includes('lychee')) return '🍓';
+  if (n.includes('chocolate')) return '🍫';
+  if (n.includes('honey')) return '🍯';
+  
+  return '🥤'; // Default emoji
 };
 
 // Helper function to convert DB product to menu item
@@ -171,7 +161,7 @@ const convertToMenuItem = (product: DbProduct): Item => ({
   name: product.name,
   basePrice: Number(product.price),
   description: 'Delicious bubble tea drink',
-  imageUrl: getProductImage(product.name),
+  imageUrl: '',
   optionGroups: [
     DEFAULT_SIZE_OPTIONS,
     DEFAULT_SUGAR_OPTIONS,
@@ -269,7 +259,7 @@ export default function OldDesignMenuPage() {
     const fetchWeather = async () => {
       const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
       const city = 'College Station'; 
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=imperial&appid=${apiKey}`;
 
       try {
         const response = await fetch(url);
@@ -372,7 +362,7 @@ export default function OldDesignMenuPage() {
               )}
               {weather && (
                 <div className="text-sm text-zinc-300">
-                  🌤️ {weather.city}: {weather.temperature}°C, {weather.description}
+                  🌤️ {weather.city}: {weather.temperature}°F, {weather.description}
                 </div>
               )}
             </div>
@@ -464,16 +454,8 @@ export default function OldDesignMenuPage() {
                         : 'border-zinc-800 bg-zinc-900/50'
                     }`}
                   >
-                    <div className="h- w-full bg-zinc-800/50 relative overflow-hidden">
-                      {item.imageUrl ? (
-                        <img 
-                          src={item.imageUrl} 
-                          alt={item.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-zinc-800/50" />
-                      )}
+                    <div className="h-40 w-full bg-zinc-800/50 relative overflow-hidden flex items-center justify-center">
+                      <div className="text-6xl">{getDrinkEmoji(item.name)}</div>
                       {item.isSpecial && (
                         <div className="absolute top-2 right-2 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold">
                           SPECIAL
@@ -594,9 +576,8 @@ function CustomizeModal({
         }
       };
       ensureDefault('size', 's');
-      ensureDefault('sugar', '100');
+      ensureDefault('sugar', '50');
       ensureDefault('ice', 'normal');
-      ensureDefault('temp', 'cold');
       return next;
     });
   }, []);
@@ -636,7 +617,7 @@ function CustomizeModal({
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-white">{o.name}</span>
-                        {o.priceDelta ? (
+                        {o.priceDelta !== undefined ? (
                           <span className="text-sm text-white">+${o.priceDelta.toFixed(2)}</span>
                         ) : (
                           <span className="text-sm text-white">Included</span>
