@@ -1,53 +1,5 @@
 import { NextResponse } from 'next/server';
 
-// product database for context 
-const PRODUCTS = [
-  { id: 4, name: 'Classic Milk Tea', price: 4.50, type: 'product', vegan: false },
-  { id: 9, name: 'Oolong Milk Tea', price: 4.80, type: 'product', vegan: false },
-  { id: 10, name: 'Jasmine Green Milk Tea', price: 4.70, type: 'product', vegan: false },
-  { id: 7, name: 'Thai Tea', price: 4.75, type: 'product', vegan: false },
-  { id: 8, name: 'Brown Sugar Milk Tea', price: 5.25, type: 'product', vegan: false },
-  { id: 12, name: 'Strawberry Milk Tea', price: 5.00, type: 'product', vegan: false },
-  { id: 13, name: 'Mango Milk Tea', price: 5.20, type: 'product', vegan: false },
-  { id: 14, name: 'Chocolate Milk Tea', price: 5.00, type: 'product', vegan: false },
-  { id: 15, name: 'Coffee Milk Tea', price: 5.25, type: 'product', vegan: false },
-  { id: 6, name: 'Matcha Latte', price: 5.50, type: 'product', vegan: false },
-  { id: 5, name: 'Taro Milk Tea', price: 5.00, type: 'product', vegan: true },
-  { id: 16, name: 'Rose Milk Tea', price: 5.30, type: 'product', vegan: false },
-  { id: 18, name: 'Passionfruit Green Tea', price: 4.85, type: 'product', vegan: false },
-  { id: 19, name: 'Coconut Milk Tea', price: 5.10, type: 'product', vegan: false },
-  { id: 11, name: 'Honeydew Milk Tea', price: 5.10, type: 'product', vegan: false },
-  { id: 17, name: 'Lychee Green Tea', price: 4.90, type: 'product', vegan: false },
-];
-
-const TOPPINGS = [
-  { id: 20, name: 'Tapioca Pearls', price: 0.75, type: 'topping' },
-  { id: 21, name: 'Grass Jelly', price: 0.60, type: 'topping' },
-  { id: 22, name: 'Red Bean', price: 0.80, type: 'topping' },
-  { id: 23, name: 'Aloe Vera', price: 0.70, type: 'topping' },
-  { id: 24, name: 'Pudding', price: 0.85, type: 'topping' },
-  { id: 25, name: 'Oreo Crumbs', price: 0.90, type: 'topping' },
-  { id: 26, name: 'Cheese Foam', price: 1.00, type: 'topping' },
-  { id: 27, name: 'Rainbow Jelly', price: 0.95, type: 'topping' },
-];
-
-// create product context for AI
-const productContext = `You are a brief and helpful customer service assistant for Bobalicious. Keep your responses SHORT and to the point - no more than 1-2 sentences unless asked for more details.
-
-=== DRINKS ===
-${PRODUCTS.map((p) => `${p.name}${p.vegan ? ' *VEGAN*' : ''} - $${p.price.toFixed(2)}`).join('\n')}
-
-=== AVAILABLE TOPPINGS ===
-${TOPPINGS.map((t) => `${t.name} - $${t.price.toFixed(2)}`).join('\n')}
-
-IMPORTANT RULES:
-1. Keep answers SHORT and direct
-2. Answer the question immediately, don't over-explain
-3. Only provide what was asked for
-4. If asked about a drink: mention name and price only (unless they ask for more)
-5. If asked for recommendations: suggest 1-2 items only
-6. Keep it casual and friendly but brief`;
-
 export async function POST(request: Request) {
   try {
     const { question } = await request.json();
@@ -59,6 +11,49 @@ export async function POST(request: Request) {
       );
     }
 
+    // Fetch products from database
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    let inventoryData = [];
+    
+    try {
+      const inventoryRes = await fetch(`${apiUrl}/api/inventory`);
+      if (inventoryRes.ok) {
+        const responseData = await inventoryRes.json();
+        // Backend returns { success: true, data: [...] }
+        inventoryData = responseData.data || responseData || [];
+        if (!Array.isArray(inventoryData)) {
+          inventoryData = [];
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch inventory:', err);
+    }
+
+    // Separate products and toppings and special items
+    const PRODUCTS = inventoryData.filter((item: any) => item.category === 'product');
+    const TOPPINGS = inventoryData.filter((item: any) => item.category === 'topping');
+    const SPECIAL_ITEMS = inventoryData.filter((item: any) => item.category === 'product' && (item.seasonal === 'y' || item.seasonal === 'Y'));
+
+    // create product context for AI
+    const productContext = `You are a brief and helpful customer service assistant for Bobalicious. Keep your responses SHORT and to the point - no more than 1-2 sentences unless asked for more details.
+
+=== DRINKS ===
+${PRODUCTS.map((p: any) => `${p.name} - $${Number(p.price).toFixed(2)}`).join('\n')}
+
+=== AVAILABLE TOPPINGS ===
+${TOPPINGS.map((t: any) => `${t.name} - $${Number(t.price).toFixed(2)}`).join('\n')}
+
+=== SEASONAL SPECIALS ===
+${SPECIAL_ITEMS.length > 0 ? SPECIAL_ITEMS.map((s: any) => `${s.name} - $${Number(s.price).toFixed(2)}`).join('\n') : 'No seasonal specials available right now'}
+
+IMPORTANT RULES:
+1. Keep answers SHORT and direct
+2. Answer the question immediately, don't over-explain
+3. Only provide what was asked for
+4. If asked about a drink: mention name and price only (unless they ask for more)
+5. If asked for recommendations: suggest 1-2 items only
+6. Keep it casual and friendly but brief`;
+
     const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -69,6 +64,7 @@ export async function POST(request: Request) {
     }
 
     console.log('Sending request to Google Gemini with question:', question);
+    console.log('Product context:', productContext);
 
     // call Google Gemini API 
     const response = await fetch(
@@ -108,10 +104,19 @@ export async function POST(request: Request) {
     const data = await response.json();
     console.log('Gemini API response:', JSON.stringify(data, null, 2));
     
-    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated';
+    let answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
-    if (!answer || answer === 'No response generated') {
-      console.error('Empty response from Gemini. Full response:', data);
+    if (!answer || answer.trim() === '') {
+      console.error('❌ Empty response from Gemini. Full response:', JSON.stringify(data, null, 2));
+      
+      // Check if there's a safety rating issue
+      if (data.candidates?.[0]?.finishReason === 'SAFETY') {
+        answer = 'I can\'t provide a response to that question. Please try asking something else.';
+      } else if (data.promptFeedback?.blockReason) {
+        answer = 'Your question was blocked by safety filters. Please rephrase and try again.';
+      } else {
+        answer = 'Sorry, I couldn\'t generate a response. Please try again.';
+      }
     }
 
     return NextResponse.json({
