@@ -63,3 +63,13 @@ body {
     padding: 20px;
     margin-bottom: 60px;
 }
+
+.logout-btn {
+    background: linear-gradient(#ff6b6b, #ff5252);
+    color: white;
+    border-color: #ff5252;
+}
+
+.logout-btn:hover {
+    background: linear-gradient(#ff5252, #ff3b3b);
+}
