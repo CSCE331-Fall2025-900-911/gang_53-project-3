@@ -206,7 +206,21 @@ export default function ManagerOrderPage() {
         }
     };
 
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const total = cart.reduce((sum, item) => {
+        const basePrice = Number(item.price) || 0;
+        const toppingPrice = item.toppings.reduce((tSum, topping) => tSum + (topping.price || 0), 0);
+        return sum + (basePrice + toppingPrice) * item.quantity;
+    }, 0);
+
+    // Calculate current modal price based on selections
+    const getModalPrice = () => {
+        if (!selectedDrink) return 0;
+        const selectedSizeObj = SIZES.find(s => s.id === selectedSize);
+        const sizePriceDelta = selectedSizeObj?.priceDelta || 0;
+        const basePriceWithSize = selectedDrink.price + sizePriceDelta;
+        const toppingPrice = selectedToppings.reduce((sum, t) => sum + t.price, 0);
+        return basePriceWithSize + toppingPrice;
+    };
 
     return (
         <div className="manager-order-container">
@@ -292,7 +306,7 @@ export default function ManagerOrderPage() {
                                                 <span>{item.quantity}</span>
                                                 <button onClick={() => updateQuantity(item, item.quantity + 1)}>+</button>
                                             </div>
-                                            <p className="cart-item-price">${(item.price * item.quantity).toFixed(2)}</p>
+                                            <p className="cart-item-price">${((item.price + item.toppings.reduce((sum, t) => sum + t.price, 0)) * item.quantity).toFixed(2)}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -309,7 +323,7 @@ export default function ManagerOrderPage() {
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <h2>{selectedDrink.name}</h2>
-                        <p className="modal-price">${Number(selectedDrink.price).toFixed(2)}</p>
+                        <p className="modal-price">${Number(getModalPrice()).toFixed(2)}</p>
 
                         <div className="modal-section">
                             <label>Size:</label>
