@@ -232,9 +232,77 @@ export default function ManagerOrderPage() {
         return basePriceWithSize + toppingPrice;
     };
 
+    const submitOrder = async () => {
+        try {
+            const apiUrl = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:5000").replace(/\/$/, '');
+            
+            console.log('API URL being called:', apiUrl);
+            console.log('Full endpoint:', `${apiUrl}/api/orders`);
+            // Format cart items for the API
+            const items = cart.map(item => ({
+                itemId: `product-${item.id}`,
+                quantity: item.quantity,
+                selections: {
+                    toppings: item.toppings.map(t => {
+                        // Map topping names back to IDs
+                        const toppingKeys = {
+                            'Tapioca Pearls': 'tapioca',
+                            'Grass Jelly': 'grass',
+                            'Red Bean': 'red_bean',
+                            'Aloe Vera': 'aloe',
+                            'Pudding': 'pudding',
+                            'Oreo Crumbs': 'oreo',
+                            'Cheese Foam': 'cheese',
+                            'Rainbow Jelly': 'rainbow',
+                        };
+                        return toppingKeys[t.name as keyof typeof toppingKeys] || '';
+                    }).filter(Boolean)
+                }
+            }));
+
+            console.log('Submitting order with items:', items);
+            console.log('Cart data:', cart);
+            console.log('Cart length:', cart.length);
+            console.log('Items formatted for API:', JSON.stringify(items, null, 2));
+
+            if (items.length === 0) {
+                alert('Cart is empty. Cannot submit order.');
+                return false;
+            }
+
+            const response = await fetch(`${apiUrl}/api/orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    items,
+                    customer_name: 'Manager Order'
+                })
+            });
+
+            const data = await response.json();
+            console.log('API Response:', JSON.stringify(data, null, 2));
+            console.log('Response success:', data.success);
+            console.log('Response orderId:', data.data?.order_id);
+            if (data.success) {
+                console.log('Order created with ID:', data.data?.order_id);
+                return true;
+            } else {
+                console.error('Order creation failed:', data.error);
+                alert(`Error: ${data.error}`);
+                return false;
+            }
+        } catch (error) {
+            console.error('Error submitting order:', error);
+            alert('Failed to submit order');
+            return false;
+        }
+    };
+
     return (
         <div className="manager-order-container">
-            <h1 className="manager-order-title">Bobalicious Manager Order</h1>
+            <h1 className="manager-order-title">Employee Order</h1>
 
             {loading && <p className="loading-text">Loading inventory...</p>}
             {error && <p className="error-text">Error: {error}</p>}
@@ -451,13 +519,19 @@ export default function ManagerOrderPage() {
                                 <div className="payment-buttons">
                                     <button 
                                         className="payment-btn card-btn"
-                                        onClick={() => setPaymentSuccess(true)}
+                                        onClick={async () => {
+                                            const success = await submitOrder();
+                                            if (success) setPaymentSuccess(true);
+                                        }}
                                     >
                                         💳 Card
                                     </button>
                                     <button 
                                         className="payment-btn cash-btn"
-                                        onClick={() => setPaymentSuccess(true)}
+                                        onClick={async () => {
+                                            const success = await submitOrder();
+                                            if (success) setPaymentSuccess(true);
+                                        }}
                                     >
                                         💵 Cash
                                     </button>
