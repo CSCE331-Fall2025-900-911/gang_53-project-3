@@ -1,4 +1,7 @@
+import express from "express";
 import pool from "../db.js";
+
+const router = express.Router();
 
 const TOPPING_MAP = {
   tapioca: { id: 20, name: "Tapioca Pearls" },
@@ -16,25 +19,9 @@ function extractInventoryId(itemId = "") {
   return match ? Number(match[1]) : null;
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res
-      .status(405)
-      .json({ success: false, error: "Method not allowed" });
-  }
+router.post("/", async (req, res) => {
+  const body = req.body;
 
-  // Vercel does NOT auto-parse JSON bodies for Node serverless functions
-  let body = req.body;
-  if (!body || typeof body === "string") {
-    try {
-      body = JSON.parse(req.body || "{}");
-    } catch (e) {
-      console.error("JSON parse error:", e);
-      body = {};
-    }
-  }
-
-  // Debug print
   console.log("Parsed body:", body);
 
   // Support BOTH naming conventions
@@ -59,10 +46,14 @@ export default async function handler(req, res) {
       [customerName]
     );
     const orderId = orderResult.rows[0].order_id;
+    console.log('Created order with ID:', orderId);
+    console.log('Processing items:', items);
 
     for (const line of items) {
       const baseInventoryId = extractInventoryId(line.itemId);
       const quantity = Number(line.quantity) || 0;
+
+      console.log('Processing item:', line.itemId, 'Extracted ID:', baseInventoryId, 'Quantity:', quantity);
 
       if (!baseInventoryId) {
         throw new Error(`Invalid itemId: ${line.itemId}`);
@@ -114,7 +105,16 @@ export default async function handler(req, res) {
 
     await client.query("COMMIT");
 
-    return res.json({ success: true, orderId });
+    // Return the full order data
+    const orderData = await client.query(
+      "SELECT order_id, customer_name, order_date FROM orders WHERE order_id = $1",
+      [orderId]
+    );
+
+    return res.json({ 
+      success: true, 
+      data: orderData.rows[0]
+    });
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Order creation failed:", err);
@@ -125,4 +125,6 @@ export default async function handler(req, res) {
   } finally {
     client.release();
   }
-}
+});
+
+export default router;
