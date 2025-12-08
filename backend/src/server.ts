@@ -884,6 +884,38 @@ app.post('/api/login', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/api/signup', async (req: Request, res: Response) => {
+  const { username, password, name, email } = req.body || {};
+
+  if (!username || !password || !name || !email) {
+    return res
+      .status(400)
+      .json({ success: false, error: 'Missing username, password, name, or email' });
+  }
+
+  try {
+    const existing = await pool.query(
+      'SELECT 1 FROM customers WHERE username = $1 OR email = $2 LIMIT 1',
+      [username, email]
+    );
+    const existingCount = existing?.rowCount ?? 0;
+    if (existingCount > 0) {
+      return res.status(409).json({ success: false, error: 'User already exists' });
+    }
+
+    const result = await pool.query(
+      'INSERT INTO customers (name, email, username, password) VALUES ($1, $2, $3, $4) RETURNING id, name, email, username',
+      [name, email, username, password]
+    );
+
+    (req.session as any).user = result.rows[0];
+    res.status(201).json({ success: true, user: result.rows[0] });
+  } catch (error) {
+    console.error('Error during signup:', error);
+    res.status(500).json({ success: false, error: 'Failed to sign up' });
+  }
+});
+
 // Employee Login Endpoint
 app.post('/api/employees/login', async (req: Request, res: Response) => {
   const { username, password } = req.body;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 
 const googleAuthUrl =
@@ -8,16 +8,28 @@ const googleAuthUrl =
     ? "https://gang53-project-3-backend.vercel.app/auth/google"
     : "http://localhost:5000/auth/google";
 
-const apiUrl =
-  process.env.NODE_ENV === "production"
-    ? "https://gang53-project-3-backend.vercel.app"
-    : "http://localhost:8080";
-
 function LoginContent() {
+  const [backendUrl, setBackendUrl] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+
+  const [signupMode, setSignupMode] = useState<boolean>(false);
+  const [signupName, setSignupName] = useState<string>("");
+  const [signupEmail, setSignupEmail] = useState<string>("");
+  const [signupUsername, setSignupUsername] = useState<string>("");
+  const [signupPassword, setSignupPassword] = useState<string>("");
+  const [signupError, setSignupError] = useState<string>("");
+  const [signupLoading, setSignupLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const url =
+      typeof window !== "undefined" && window.location.hostname === "localhost"
+        ? "http://localhost:5000"
+        : (process.env.NEXT_PUBLIC_API_URL || "https://gang53-project-3-backend.vercel.app");
+    setBackendUrl(url.replace(/\/$/, ""));
+  }, []);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -25,11 +37,12 @@ function LoginContent() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${apiUrl}/api/login`, {
+      const response = await fetch(`${backendUrl}/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ username, password }),
       });
 
@@ -41,14 +54,47 @@ function LoginContent() {
         return;
       }
 
-      // Save user locally
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      // Redirect
       window.location.href = "/dashboard";
     } catch (err) {
       setError("Connection error. Please try again.");
       setLoading(false);
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSignupError("");
+    setSignupLoading(true);
+
+    try {
+      const response = await fetch(`${backendUrl}/api/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          username: signupUsername,
+          password: signupPassword,
+          name: signupName,
+          email: signupEmail,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setSignupError(data.error || "Sign up failed");
+        setSignupLoading(false);
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(data.user));
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setSignupError("Connection error. Please try again.");
+      setSignupLoading(false);
     }
   };
 
@@ -89,53 +135,134 @@ function LoginContent() {
           </a>
         </div>
 
-        {/* Manual Login */}
+        {/* Manual Login / Signup */}
         <div className="rounded-3xl border border-purple-800/60 bg-purple-900/20 p-6 shadow-lg shadow-purple-900/30">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-sm uppercase tracking-wide text-purple-200/80">
                 Account Login
               </p>
-              <h2 className="text-xl font-bold">Sign in with Username</h2>
+              <h2 className="text-xl font-bold">
+                {signupMode ? "Create your account" : "Sign in with Username"}
+              </h2>
             </div>
             <span className="rounded-full bg-purple-700/50 px-3 py-1 text-xs font-semibold text-white">
-              Secure
+              {signupMode ? "New" : "Secure"}
             </span>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setUsername(e.target.value)
-              }
-              required
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-            />
+          {!signupMode && (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setUsername(e.target.value)
+                }
+                required
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              />
 
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setPassword(e.target.value)
-              }
-              required
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-            />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setPassword(e.target.value)
+                }
+                required
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              />
 
-            {error && <p className="text-sm text-red-400">{error}</p>}
+              {error && <p className="text-sm text-red-400">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-2xl border border-purple-700 bg-purple-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-purple-500 hover:shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Logging in..." : "Log in"}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading || !backendUrl}
+                className="w-full rounded-2xl border border-purple-700 bg-purple-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-purple-500 hover:shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Logging in..." : "Log in"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSignupMode(true);
+                  setError("");
+                }}
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-800"
+              >
+                Sign Up
+              </button>
+            </form>
+          )}
+
+          {signupMode && (
+            <form onSubmit={handleSignup} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Name"
+                value={signupName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSignupName(e.target.value)
+                }
+                required
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={signupEmail}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSignupEmail(e.target.value)
+                }
+                required
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              />
+              <input
+                type="text"
+                placeholder="Username"
+                value={signupUsername}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSignupUsername(e.target.value)
+                }
+                required
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={signupPassword}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSignupPassword(e.target.value)
+                }
+                required
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              />
+
+              {signupError && <p className="text-sm text-red-400">{signupError}</p>}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSignupMode(false);
+                    setSignupError("");
+                  }}
+                  className="w-1/3 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={signupLoading || !backendUrl}
+                  className="w-2/3 rounded-2xl border border-purple-700 bg-purple-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-purple-500 hover:shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {signupLoading ? "Signing up..." : "Create account"}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </section>
 
