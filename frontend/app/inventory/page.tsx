@@ -434,7 +434,7 @@ export default function InventoryPage() {
 
                         <input
                             id="edit-name"
-                            placeholder="New name (leave blank to keep)"
+                            placeholder="New name (blank = keep)"
                         />
                         <input
                             id="edit-price"
@@ -454,7 +454,7 @@ export default function InventoryPage() {
                         />
                         <input
                             id="edit-seasonal"
-                            placeholder="New seasonal (blank = keep)"
+                            placeholder="New seasonal (y/n)"
                         />
 
                         <button onClick={handleEditItem}>Save</button>
