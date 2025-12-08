@@ -64,10 +64,16 @@ const getDrinkType = (name: string): 'tea' | 'coffee' | 'smoothie' | 'fruit' => 
     return 'tea';
 };
 
-// Helper function to check if drink needs temperature option
-const needsTemperatureOption = (type: 'tea' | 'coffee' | 'smoothie' | 'fruit'): boolean => {
-    return type === 'coffee';
-};
+    // Helper function to get emoji for drink type
+    const getDrinkEmoji = (name: string): string => {
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes('coffee') || lowerName.includes('cappuccino') || lowerName.includes('latte') || lowerName.includes('mocha') || lowerName.includes('espresso') || lowerName.includes('americano')) return '☕';
+        if (lowerName.includes('smoothie')) return '🥤';
+        if (lowerName.includes('juice')) return '🧃';
+        if (lowerName.includes('matcha')) return '🍵';
+        if (lowerName.includes('milk tea') || lowerName.includes('tea')) return '🧋';
+        return '🥛';
+    };
 
 export default function ManagerOrderPage() {
     const [drinks, setDrinks] = useState<Drink[]>([]);
@@ -83,6 +89,8 @@ export default function ManagerOrderPage() {
     const [selectedTemperature, setSelectedTemperature] = useState('Cold');
     const [selectedToppings, setSelectedToppings] = useState<Topping[]>([]);
     const [showModal, setShowModal] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentSuccess, setPaymentSuccess] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -254,11 +262,7 @@ export default function ManagerOrderPage() {
                             {filteredDrinks.length > 0 ? (
                                 filteredDrinks.map((d) => (
                                     <div key={d.inventory_id} className="manager-drink-card">
-                                        <img
-                                            src="/boba-template.png"
-                                            alt={d.name}
-                                            className="manager-drink-img"
-                                        />
+                                        <div className="manager-drink-emoji">{getDrinkEmoji(d.name)}</div>
                                         <h3>{d.name}</h3>
                                         <p className="drink-price">${Number(d.price).toFixed(2)}</p>
                                         {d.seasonal === "y" && <span className="seasonal-badge">SEASONAL</span>}
@@ -423,11 +427,58 @@ export default function ManagerOrderPage() {
                 </div>
             )}
 
+            {/* Payment Modal */}
+            {showPaymentModal && (
+                <div className="modal-overlay" onClick={() => !paymentSuccess && setShowPaymentModal(false)}>
+                    <div className="payment-modal-content" onClick={(e) => e.stopPropagation()}>
+                        {paymentSuccess ? (
+                            <div className="payment-success">
+                                <h2>Payment Successful!</h2>
+                                <button 
+                                    className="modal-confirm-btn" 
+                                    onClick={() => {
+                                        setPaymentSuccess(false);
+                                        setShowPaymentModal(false);
+                                        setCart([]);
+                                    }}
+                                >
+                                    New Order
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="payment-options">
+                                <h2>Select Payment Method</h2>
+                                <div className="payment-buttons">
+                                    <button 
+                                        className="payment-btn card-btn"
+                                        onClick={() => setPaymentSuccess(true)}
+                                    >
+                                        💳 Card
+                                    </button>
+                                    <button 
+                                        className="payment-btn cash-btn"
+                                        onClick={() => setPaymentSuccess(true)}
+                                    >
+                                        💵 Cash
+                                    </button>
+                                </div>
+                                <button 
+                                    className="modal-cancel-btn" 
+                                    onClick={() => setShowPaymentModal(false)}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Footer */}
             <div className="manager-footer">
                 <button className="manager-home-btn" onClick={() => router.push("/manager-dashboard")}>Home</button>
                 <div className="manager-total">Total: ${total.toFixed(2)}</div>
-                <button className="manager-pay-btn">Payment</button>
+                <button className="manager-pay-btn" onClick={() => setShowPaymentModal(true)} disabled={cart.length === 0}>Payment</button>
             </div>
         </div>
     );
