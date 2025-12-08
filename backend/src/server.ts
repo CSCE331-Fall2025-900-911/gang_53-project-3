@@ -56,10 +56,12 @@ const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+const envFrontend = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
 const allowedOrigins = [
-  'https://bobaliciousgang53.vercel.app',   // production frontend
-  'http://localhost:3000', // local dev
-];
+  'https://bobaliciousgang53.vercel.app',   // legacy production frontend
+  'http://localhost:3000',                  // local dev
+  envFrontend,                              // configurable frontend origin
+].filter(Boolean);
 
 const corsOptions = {
   origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
