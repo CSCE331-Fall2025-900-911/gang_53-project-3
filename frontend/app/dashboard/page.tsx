@@ -324,35 +324,43 @@ export default function OldDesignMenuPage() {
       style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center top' }}
     >
       {/* Accessibility Controls */}
-      <div className="flex gap-2 flex-wrap p-4 bg-zinc-800/30 border-b border-zinc-700">
+      <div className="flex gap-2 flex-wrap p-4 bg-zinc-800/30 border-b border-zinc-700 items-center justify-between">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setZoomLevel((prev) => Math.min(prev + 0.2, 2))}
+            className="rounded-lg border border-blue-600 bg-blue-800/50 px-3 py-2 text-sm font-medium hover:bg-blue-700/50 transition-colors"
+            title="Zoom in for better visibility"
+          >
+            🔍 Zoom In
+          </button>
+          <button
+            onClick={() => setZoomLevel(1)}
+            className="rounded-lg border border-blue-600 bg-blue-800/50 px-3 py-2 text-sm font-medium hover:bg-blue-700/50 transition-colors"
+            title="Reset zoom to normal size"
+          >
+            ↺ Reset Zoom
+          </button>
+          <button
+            onClick={() => setHighContrast((prev) => !prev)}
+            className="rounded-lg border border-blue-600 bg-blue-800/50 px-3 py-2 text-sm font-medium hover:bg-blue-700/50 transition-colors"
+            title="Toggle high contrast for better readability"
+          >
+            {highContrast ? '◐ Normal Colors' : '◑ High Contrast'}
+          </button>
+        </div>
         <button
-          onClick={() => setZoomLevel((prev) => Math.min(prev + 0.2, 2))}
-          className="rounded-lg border border-blue-600 bg-blue-800/50 px-3 py-2 text-sm font-medium hover:bg-blue-700/50 transition-colors"
-          title="Zoom in for better visibility"
+          onClick={handleLogout}
+          className="rounded-lg border border-red-700 bg-red-900/40 px-6 py-2 text-sm font-medium hover:bg-red-900/60 transition-colors"
         >
-          🔍 Zoom In
-        </button>
-        <button
-          onClick={() => setZoomLevel(1)}
-          className="rounded-lg border border-blue-600 bg-blue-800/50 px-3 py-2 text-sm font-medium hover:bg-blue-700/50 transition-colors"
-          title="Reset zoom to normal size"
-        >
-          ↺ Reset Zoom
-        </button>
-        <button
-          onClick={() => setHighContrast((prev) => !prev)}
-          className="rounded-lg border border-blue-600 bg-blue-800/50 px-3 py-2 text-sm font-medium hover:bg-blue-700/50 transition-colors"
-          title="Toggle high contrast for better readability"
-        >
-          {highContrast ? '◐ Normal Colors' : '◑ High Contrast'}
+          Logout
         </button>
       </div>
 
-      {/* Top header with user info, weather, and translate */}
+      {/* Top header with user info, weather */}
       <div className="border-b border-zinc-800 bg-zinc-900/70 px-6 py-4">
      <div className="mx-auto w-full max-w-6xl">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            {/* Left: User greeting and weather */}
+            {/* Left: User info */}
             <div className="space-y-2">
               {user && (
                 <div>
@@ -367,17 +375,8 @@ export default function OldDesignMenuPage() {
               )}
             </div>
 
-            {/* Right: logout */}
-            <div className="flex flex-col items-start gap-3 md:items-end">
-              {backendURL && user && (
-                <button
-                  onClick={handleLogout}
-                  className="rounded-lg border border-red-700 bg-red-900/40 px-4 py-2 text-sm font-medium hover:bg-red-900/60"
-                >
-                  Logout
-                </button>
-              )}
-            </div>
+            {/* Right: Empty for balance */}
+            <div></div>
           </div>
         </div>
       </div>
