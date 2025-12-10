@@ -31,6 +31,14 @@ function LoginContent() {
     setBackendUrl(url.replace(/\/$/, ""));
   }, []);
 
+  const clearTranslatePrefs = () => {
+    if (typeof document === "undefined") return;
+    document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+    localStorage.removeItem("googtrans");
+    sessionStorage.removeItem("googtrans");
+  };
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -100,6 +108,19 @@ function LoginContent() {
 
   return (
     <div className="space-y-10">
+      <div className="flex justify-start">
+        <button
+          type="button"
+          onClick={() => {
+            clearTranslatePrefs();
+            window.location.href = "/";
+          }}
+          className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-zinc-800"
+        >
+          ← Back
+        </button>
+      </div>
+
       <header className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-8 text-center shadow-lg">
         <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
           Bobalicious
