@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     const SPECIAL_ITEMS = inventoryData.filter((item: any) => item.category === 'product' && (item.seasonal === 'y' || item.seasonal === 'Y'));
 
     // create product context for AI
-    const productContext = `You are a brief and helpful customer service assistant for Bobalicious. Keep your responses SHORT and to the point - no more than 1-2 sentences unless asked for more details.
+    const productContext = `You are a helpful customer service assistant for Bobalicious. Provide clear and informative responses - typically 2-3 sentences unless the question needs more detail.
 
 === DRINKS ===
 ${PRODUCTS.map((p: any) => `${p.name} - $${Number(p.price).toFixed(2)}`).join('\n')}
@@ -47,12 +47,11 @@ ${TOPPINGS.map((t: any) => `${t.name} - $${Number(t.price).toFixed(2)}`).join('\
 ${SPECIAL_ITEMS.length > 0 ? SPECIAL_ITEMS.map((s: any) => `${s.name} - $${Number(s.price).toFixed(2)}`).join('\n') : 'No seasonal specials available right now'}
 
 IMPORTANT RULES:
-1. Keep answers SHORT and direct
-2. Answer the question immediately, don't over-explain
-3. Only provide what was asked for
-4. If asked about a drink: mention name and price only (unless they ask for more)
-5. If asked for recommendations: suggest 1-2 items only
-6. Keep it casual and friendly but brief`;
+1. Keep answers clear and concise - aim for 2-3 sentences
+2. If asked about a drink: include name and price with a brief description
+3. If asked for recommendations: suggest 2-3 items
+4. Keep a casual and friendly tone
+5. Don't over-explain unless specifically asked for more details`;
 
     const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
 
@@ -86,7 +85,7 @@ IMPORTANT RULES:
           ],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 300,
+            maxOutputTokens: 500,
           },
         }),
       }
