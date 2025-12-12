@@ -633,6 +633,15 @@ app.post('/api/orders', async (req: Request, res: Response) => {
       );
       const orderItemId = itemResult.rows[0].order_item_id;
 
+      // Deduct cups (1 cup per drink)
+      const cupUpdate = await client.query(
+        "UPDATE inventory SET quantity_on_hand = quantity_on_hand - $2 WHERE inventory_id = $1 AND quantity_on_hand >= $2 RETURNING quantity_on_hand",
+        [1, quantity]
+      );
+      if (cupUpdate.rowCount === 0) {
+        throw new Error(`Insufficient cups in stock`);
+      }
+
       // Toppings
       const toppingSelections = Array.isArray(line?.selections?.toppings)
         ? line.selections.toppings
